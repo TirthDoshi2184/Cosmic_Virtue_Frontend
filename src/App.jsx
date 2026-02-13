@@ -1,0 +1,93 @@
+// App.js
+import { useLocation, Routes, Route, matchPath } from "react-router-dom";
+import { useEffect } from "react";
+
+// Import Components
+import Navbar from './Components/Navbar';
+import Footer from './Components/Footer';
+
+// Import Pages
+import HomePage from './Pages/HomePage';
+import Login from './Pages/LoginPage';
+import Register from './Pages/RegisterPage';
+import Products from './Pages/ProductPage';
+import ProductDetail from './Pages/ProductDetail';
+
+// import Wishlist from './pages/Wishlist';
+import About from './Pages/AboutUsPage';
+import Contact from './Pages/ContactUs';
+// import Profile from './pages/Profile';
+import Orders from './Pages/OrderHistory';
+import OrderCheckout from './Pages/OrderCheckoutPage';
+import CartSidebar from "./Pages/CartPage";
+import OrderCheckoutPage from "./Pages/OrderCheckoutPage";
+import OrderHistoryPage from "./Pages/OrderHistory";
+import Categories from "./Pages/CategoryPage";
+import WishlistPage from "./Pages/WishlistPage";
+
+// ScrollToTop Component
+function ScrollToTop() {
+  const location = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
+  return null;
+}
+
+
+function App() {
+  const location = useLocation();
+
+  // Paths where navbar/footer should be hidden
+  const hideLayoutPaths = [
+  ];
+
+  // Check if current path matches any of the patterns
+  const hideLayout = hideLayoutPaths.some(path => {
+    const match = matchPath({ path, end: false }, location.pathname);
+    return match !== null;
+  });
+
+  return (
+    <>
+      <ScrollToTop />
+      
+      {/* Conditionally render Navbar */}
+      {!hideLayout && <Navbar />}
+      
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/products" element={<Products />} />
+        <Route path="/product/:id" element={<ProductDetail />} />
+        <Route path="/cart" element={<CartSidebar />} />
+        <Route path="/checkout" element={<OrderCheckoutPage />} />
+        <Route path="/categories" element={<Categories />} />
+        <Route path="/wishlist" element={<WishlistPage />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
+        {/* <Route path="/profile" element={<Profile />} /> */}
+        <Route path="/order-success" element={<OrderHistoryPage />} />
+        
+        {/* 404 Route - should be last */}
+        <Route path="*" element={
+          <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950/30 to-slate-950 flex items-center justify-center">
+            <div className="text-center">
+              <h1 className="text-6xl font-bold text-white mb-4">404</h1>
+              <p className="text-gray-400 text-xl">Page Not Found</p>
+            </div>
+          </div>
+        } />
+      </Routes>
+
+      {/* Conditionally render Footer */}
+      {!hideLayout && <Footer />}
+    </>
+  );
+}
+
+export default App;

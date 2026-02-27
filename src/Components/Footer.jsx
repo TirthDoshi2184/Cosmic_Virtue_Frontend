@@ -53,7 +53,7 @@ export default function Footer() {
               {/* ── Brand ── */}
               <div className="sm:col-span-2 lg:col-span-1">
                 <div className="flex items-center gap-2.5 mb-4">
-                  <img src="/Logo.jpeg" alt="Cosmic Virtue" className="h-12 w-auto object-contain rounded-full shadow-sm" />
+                  <img src="https://res.cloudinary.com/ddpvtobbh/image/upload/v1772228242/Logo_fybl1d.jpg" alt="Cosmic Virtue" className="h-12 w-auto object-contain rounded-full shadow-sm" />
                   <h2
                     className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"
                     style={{ fontFamily: "'Playfair Display', serif" }}

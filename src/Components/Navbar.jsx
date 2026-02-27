@@ -140,7 +140,7 @@ const Navbar = () => {
               <a href="/">
                 <div className="absolute left-1/2 -translate-x-1/2 md:relative md:left-0 md:translate-x-0 flex items-center gap-2 md:gap-3">
                   <img
-                    src="/Logo.jpeg"
+                    src="https://res.cloudinary.com/ddpvtobbh/image/upload/v1772228242/Logo_fybl1d.jpg"
                     alt="Cosmic Virtue"
                     className="h-9 md:h-14 w-auto object-contain rounded-full shadow-sm"
                   />
@@ -328,7 +328,7 @@ const Navbar = () => {
         {/* Sidebar header */}
         <div className="flex items-center justify-between px-5 py-5 border-b border-gray-100 bg-gradient-to-r from-purple-50 to-pink-50">
           <div className="flex items-center gap-2.5">
-            <img src="/Logo.jpeg" alt="Cosmic Virtue" className="h-10 w-auto object-contain rounded-full" />
+            <img src="https://res.cloudinary.com/ddpvtobbh/image/upload/v1772228242/Logo_fybl1d.jpg" alt="Cosmic Virtue" className="h-10 w-auto object-contain rounded-full" />
             <h2
               className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"
               style={{ fontFamily: "'Dancing Script', cursive" }}

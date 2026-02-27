@@ -47,7 +47,7 @@ const Navbar = () => {
       const token = getUserToken();
       const userId = getUserId();
       if (!token || !userId) return 0;
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cart`, {
+      const response = await fetch(`${import.meta.env.NEXT_PUBLIC_API_URL}/cart`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

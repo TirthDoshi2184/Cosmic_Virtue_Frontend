@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ShoppingCart, X, Plus, Minus, Trash2, Heart, Loader2, Tag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+
 const CartSidebar = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const [cartItems, setCartItems] = useState([]);
@@ -9,7 +10,7 @@ const CartSidebar = ({ isOpen, onClose }) => {
   const [updating, setUpdating] = useState(false);
   const [shippingCharge, setShippingCharge] = useState(50);
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+  const API_BASE_URL = import.meta.env.VITE_API_URL;
 
   // ============================================
   // CART UTILITY FUNCTIONS

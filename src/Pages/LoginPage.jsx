@@ -43,7 +43,7 @@ const Login = () => {
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/login`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/users/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -65,7 +65,7 @@ const Login = () => {
   if (guestCart.length > 0) {
     try {
       // Call merge API
-      const mergeResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cart/merge`, {
+      const mergeResponse = await fetch(`${import.meta.env.VITE_API_URL}/cart/merge`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

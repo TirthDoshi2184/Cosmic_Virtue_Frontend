@@ -16,7 +16,7 @@ const ProductDetail = () => {
   const [wishlistAdded, setWishlistAdded] = useState(false);
   const [openAccordion, setOpenAccordion] = useState('description');
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+  const API_BASE_URL = import.meta.env.VITE_API_URL;
 
   // ============================================
   // CART UTILITY FUNCTIONS (INTEGRATED)

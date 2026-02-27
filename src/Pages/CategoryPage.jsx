@@ -15,7 +15,7 @@ const Categories = () => {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/categories`);
       if (!response.ok) throw new Error('Failed to fetch categories');
       const result = await response.json();
       setCategories(result.data || []);

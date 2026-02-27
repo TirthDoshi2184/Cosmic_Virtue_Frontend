@@ -53,7 +53,7 @@ const HomePage = () => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products`);
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/products`);
         const data = await response.json();
         if (data.data) {
           setNewArrivals(data.data.filter(p => p.isNewArrival === true));
@@ -73,7 +73,7 @@ const HomePage = () => {
     const fetchCategories = async () => {
       try {
         setCategoriesLoading(true);
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories`);
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/categories`);
         const data = await response.json();
         if (data.data && Array.isArray(data.data)) {
           setCategories(data.data);
@@ -87,7 +87,7 @@ const HomePage = () => {
     fetchCategories();
   }, []);
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+  const API_BASE_URL = import.meta.env.VITE_API_URL;
 
   const isUserLoggedIn = () => !!localStorage.getItem('token');
 

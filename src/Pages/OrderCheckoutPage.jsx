@@ -42,7 +42,7 @@
     const [verifying, setVerifying] = useState(false);
     const [shippingCharge, setShippingCharge] = useState(50); // default fallback
 
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+    const API_BASE_URL = import.meta.env.VITE_API_URL;
 
     // Form States
     const [contactInfo, setContactInfo] = useState({

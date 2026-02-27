@@ -73,7 +73,7 @@ const Register = () => {
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/register`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/users/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -18,7 +18,7 @@ const Categories = () => {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/categories`);
       if (!response.ok) throw new Error('Failed to fetch categories');
       const result = await response.json();
-      setCategories(result.data || []);
+      setCategories((result.data || []).filter(cat => cat.isActive === true));
       setError(null);
     } catch (err) {
       setError(err.message);

@@ -76,8 +76,8 @@ const HomePage = () => {
         const response = await fetch(`${import.meta.env.VITE_API_URL}/categories`);
         const data = await response.json();
         if (data.data && Array.isArray(data.data)) {
-          setCategories(data.data);
-        }
+  setCategories(data.data.filter(cat => cat.isActive === true));
+}
       } catch (error) {
         console.error('Error fetching categories:', error);
       } finally {

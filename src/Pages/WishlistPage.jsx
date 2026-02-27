@@ -8,7 +8,7 @@ const WishlistPage = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const API_BASE_URL = 'http://localhost:3000';
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
     fetchWishlist();
@@ -42,8 +42,8 @@ const WishlistPage = () => {
         }
 
         const data = await response.json();
-        setWishlistItems(data.data || []);
-      } else {
+        setWishlistItems(data.wishlist?.items || []);
+      } else {  
         // Fetch from localStorage
         const localWishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
         setWishlistItems(localWishlist);
@@ -80,7 +80,7 @@ const WishlistPage = () => {
 
       // Update UI
       setWishlistItems(prev => prev.filter(item => 
-        (item.productId || item.product?._id || item._id) !== productId
+        item.productId !== productId
       ));
       
       window.dispatchEvent(new Event('wishlistUpdated'));
@@ -234,8 +234,8 @@ const moveToCart = async (product) => {
             {/* Wishlist Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
               {wishlistItems.map((item) => {
-                const product = item.product || item;
-                const productId = item.productId || product._id;
+                const product = item;
+                const productId = item.productId;
                 
                 return (
                   <div

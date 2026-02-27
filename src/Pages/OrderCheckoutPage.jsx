@@ -40,8 +40,9 @@
     const [otpSent, setOtpSent] = useState(false);
     const [otp, setOtp] = useState("");
     const [verifying, setVerifying] = useState(false);
+    const [shippingCharge, setShippingCharge] = useState(50); // default fallback
 
-    const API_BASE_URL = "http://localhost:3000";
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
     // Form States
     const [contactInfo, setContactInfo] = useState({
@@ -245,6 +246,7 @@ const checkPincodeServiceability = async (pincode) => {
       }));
     } else {
       setPincodeStatus('ok');
+      setShippingCharge(data.shippingCharge); // ADD THIS
       // Only clear if it was previously an error
       setErrors(prev => {
         const updated = { ...prev };
@@ -373,9 +375,9 @@ const checkPincodeServiceability = async (pincode) => {
       (sum, item) => sum + item.price * item.quantity,
       0,
     );
-    const shipping = subtotal > 999 ? 0 : 50;
-    const tax = subtotal * 0.18; // 18% GST
-    const total = subtotal + shipping + tax;
+    const shipping = subtotal > 999 ? 0 : shippingCharge;
+    // const tax = subtotal * 0.18; // 18% GST
+    const total = subtotal + shipping ;
 
     // ============================================
     // VALIDATION
@@ -509,6 +511,9 @@ const checkPincodeServiceability = async (pincode) => {
       });
 
       setShowSavedAddresses(false);
+       if (address.pincode) {
+    checkPincodeServiceability(address.pincode);
+  }
     };
 
     // ============================================
@@ -530,7 +535,7 @@ const checkPincodeServiceability = async (pincode) => {
       billingAddress: sameAsShipping ? shippingAddress : billingAddress,
       items:          cartItems,
       paymentMethod,
-      pricing: { subtotal, shipping, tax, total },
+      pricing: { subtotal, shipping, total },
       emailVerified,
       userId
     };
@@ -771,27 +776,35 @@ const checkPincodeServiceability = async (pincode) => {
             </div>
 
             <div className="flex justify-between text-sm text-gray-600">
-              <span>Shipping</span>
-              <span className="font-medium">
-                {shipping === 0 ? (
-                  <span className="text-green-600 font-semibold">FREE</span>
-                ) : (
-                  `₹${shipping.toFixed(2)}`
-                )}
-              </span>
-            </div>
-
-            <div className="flex justify-between text-sm text-gray-600">
+  <span>Shipping</span>
+  <span className="font-medium">
+    {subtotal > 999 ? (
+      <span className="text-green-600 font-semibold">FREE</span>
+    ) : pincodeStatus === 'checking' ? (
+      <span className="text-blue-500 flex items-center gap-1">
+        <Loader2 className="w-3 h-3 animate-spin" /> Calculating...
+      </span>
+    ) : pincodeStatus === 'ok' ? (
+      <span className="text-gray-800 font-semibold">₹{shippingCharge.toFixed(2)}</span>
+    ) : (
+      <span className="text-gray-400 text-xs">Enter pincode</span>
+    )}
+  </span>
+</div>
+            {/* <div className="flex justify-between text-sm text-gray-600">
               <span>Tax (GST 18%)</span>
               <span className="font-medium">₹{tax.toFixed(2)}</span>
-            </div>
+            </div> */}
 
             <div className="flex justify-between items-center pt-3 border-t border-gray-200">
-              <span className="text-lg font-bold text-gray-800">Total</span>
-              <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                ₹{total.toFixed(2)}
-              </span>
-            </div>
+  <span className="text-lg font-bold text-gray-800">Total</span>
+  <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+    {pincodeStatus === 'ok' || subtotal > 999
+      ? `₹${total.toFixed(2)}`
+      : `₹${(subtotal + shippingCharge).toFixed(2)}`
+    }
+  </span>
+</div>
           </div>
 
           {/* Free Shipping Progress */}
@@ -1315,7 +1328,7 @@ const checkPincodeServiceability = async (pincode) => {
   onChange={(e) => {
     const val = e.target.value.replace(/\D/g, '').slice(0, 6);
     setShippingAddress({ ...shippingAddress, pincode: val });
-    // checkPincodeServiceability(val);       // ← ADD THIS
+    checkPincodeServiceability(val);       // ← ADD THIS
   }}
   className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
     pincodeStatus === 'error'

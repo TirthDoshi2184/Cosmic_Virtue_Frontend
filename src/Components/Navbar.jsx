@@ -376,7 +376,9 @@ const Navbar = () => {
               isOpen={mobileBathOpen}
               onToggle={() => setMobileBathOpen(!mobileBathOpen)}
             >
-              {[['Bath Salt', 'bath-salt'], ['Bath Bomb', 'bath-bomb']].map(([label, slug]) => (
+              {[['Bath Salt', 'bath-salt'], 
+              // ['Bath Bomb', 'bath-bomb']
+            ].map(([label, slug]) => (
                 <a key={slug} href={`/products?category=${slug}`} className="block px-4 py-2.5 text-sm text-gray-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-all" onClick={() => setMobileMenuOpen(false)}>
                   {label}
                 </a>
@@ -384,9 +386,9 @@ const Navbar = () => {
             </MobileAccordion>
 
             {/* Pearl Wax */}
-            <a href="/products?category=pearl-wax" className="flex items-center px-4 py-3 text-gray-700 font-medium text-sm rounded-xl hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 transition-all duration-200" onClick={() => setMobileMenuOpen(false)}>
+            {/* <a href="/products?category=pearl-wax" className="flex items-center px-4 py-3 text-gray-700 font-medium text-sm rounded-xl hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 transition-all duration-200" onClick={() => setMobileMenuOpen(false)}>
               Pearl Wax
-            </a>
+            </a> */}
 
             {/* Wax Sachet */}
             <a href="/products?category=wax-sachet" className="flex items-center px-4 py-3 text-gray-700 font-medium text-sm rounded-xl hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 transition-all duration-200" onClick={() => setMobileMenuOpen(false)}>
@@ -394,12 +396,12 @@ const Navbar = () => {
             </a>
 
             {/* Wax Melts & Diffusers */}
-            <a href="/products?category=wax-melts-diffusers" className="flex items-center px-4 py-3 text-gray-700 font-medium text-sm rounded-xl hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 transition-all duration-200" onClick={() => setMobileMenuOpen(false)}>
+            {/* <a href="/products?category=wax-melts-diffusers" className="flex items-center px-4 py-3 text-gray-700 font-medium text-sm rounded-xl hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 transition-all duration-200" onClick={() => setMobileMenuOpen(false)}>
               Wax Melts & Diffusers
-            </a>
+            </a> */}
 
             {/* Limited Editions accordion */}
-            <MobileAccordion
+            {/* <MobileAccordion
               label="Limited Editions"
               isOpen={mobileLimitedOpen}
               onToggle={() => setMobileLimitedOpen(!mobileLimitedOpen)}
@@ -422,7 +424,7 @@ const Navbar = () => {
                   {label}
                 </a>
               ))}
-            </MobileAccordion>
+            </MobileAccordion> */}
 
             {/* Divider */}
             <div className="border-t border-gray-100 my-3 mx-2"></div>

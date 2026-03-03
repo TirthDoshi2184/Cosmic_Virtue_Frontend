@@ -152,11 +152,11 @@ const Categories = () => {
                   >
                     {/* Image */}
                     <div className="relative aspect-square overflow-hidden bg-gray-50">
-                      {category.image ? (
+                      {category.imageUrl ? (
                         <img
-                          src={category.image}
+                          src={category.imageUrl}
                           alt={category.name}
-                          className="cat-img w-full h-full object-cover"
+                          className="cat-img w-full h-full object-contain"
                           onError={(e) => { e.target.style.display = 'none'; }}
                         />
                       ) : (

@@ -49,6 +49,8 @@ useEffect(() => {
       }
 
       const data = await response.json();
+      console.log(data.data);
+      
 
       const transformedProducts = data.data.map(product => ({
         id: product._id,
@@ -93,7 +95,7 @@ useEffect(() => {
 
     if (selectedCategory !== 'all') {
       filtered = filtered.filter(p => 
-  p.categoryName?.toLowerCase() === selectedCategory?.toLowerCase()
+  p.category === selectedCategory
 );
     }
 
@@ -588,7 +590,7 @@ const paginatedProducts = filteredProducts.slice(
                 <img
                   src={product.image}
                   alt={product.name}
-                  className="prod-img w-full h-full object-cover object-center"
+                  className="prod-img w-full h-full object-contain object-center"
                   onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1602874801006-64c78b297c86?w=400&h=400&fit=crop'; }}
                 />
 

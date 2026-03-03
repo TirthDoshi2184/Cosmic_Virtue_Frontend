@@ -7,25 +7,25 @@ const HomePage = () => {
 
   const slides = [
     {
-      image: "https://res.cloudinary.com/drl7llkoc/image/upload/v1771015981/Banner3_vuwdrj.jpg",
+      image: "https://res.cloudinary.com/ddpvtobbh/image/upload/v1772473727/IMG_6703_cxyocn.jpg",
       title: "COSMIC VIRTUE",
-      subtitle: "SIGNATURE COLLECTION",
-      description: "HANDCRAFTED CANDLES WITH NATURAL ESSENCE",
-      features: ["Pure Ingredients", "Artisan Crafted", "Elegant Design", "Premium Fragrance"]
+      subtitle: "BATH SALTS COLLECTION",
+      description: "HANDCRAFTED BATH SALTS IN THREE NATURAL FLAVOURS",
+      features: ["Lavender", "Orange", "Rosemary", "Pure Natural Ingredients"]
     },
     {
-      image: "https://res.cloudinary.com/drl7llkoc/image/upload/v1771015981/b5_b5gzom.jpg",
-      title: "OPULENT ILLUMINATION",
-      subtitle: "LUXURY COLLECTION",
-      description: "GOLD-INFUSED CANDLES FOR ELEGANT SPACES",
-      features: ["Premium Soy Wax", "Metallic Finish", "Long-Lasting Burn", "Sophisticated Ambiance"]
+      image: "https://res.cloudinary.com/ddpvtobbh/image/upload/v1772473532/IMG_6705_k9zzt2.jpg",
+      title: "WAX DELIGHTS",
+      subtitle: "BOTANICAL WAX COLLECTION",
+      description: "HANDMADE WAX SACHETS & PEARL WAX CREATIONS",
+      features: ["Floral Wax Sachets", "Pearl Wax Melts", "Botanical Embeds", "Artisan Crafted"]
     },
     {
-      image: "https://res.cloudinary.com/drl7llkoc/image/upload/v1771015981/Banner4_swoxzk.jpg",
-      title: "BOTANICAL SERENITY",
-      subtitle: "NATURE'S EMBRACE",
-      description: "ORGANIC CANDLES INSPIRED BY NATURE",
-      features: ["Natural Botanicals", "Rustic Charm", "Calming Scents", "Eco-Conscious"]
+      image: "https://res.cloudinary.com/ddpvtobbh/image/upload/v1772473531/IMG_6688_hcqmdi.jpg",
+      title: "SACRED LIGHT",
+      subtitle: "CANDLE COLLECTION",
+      description: "PILLAR, JAR & 7 CHAKRA CANDLES FOR EVERY SPACE",
+      features: ["Pillar Candles", "Jar Candles", "7 Chakra Candles", "Premium Soy Wax"]
     },
   ];
 
@@ -75,6 +75,8 @@ const HomePage = () => {
         setCategoriesLoading(true);
         const response = await fetch(`${import.meta.env.VITE_API_URL}/categories`);
         const data = await response.json();
+        
+        console.log(data.data);
         if (data.data && Array.isArray(data.data)) {
   setCategories(data.data.filter(cat => cat.isactive === true));
 }
@@ -427,14 +429,14 @@ const HomePage = () => {
                 >
                   <div className="aspect-square overflow-hidden">
                     <img
-                      src={category.img || `https://images.unsplash.com/photo-${
+                      src={category.imageUrl || `https://images.unsplash.com/photo-${
                         ['1602874801006-64c78b297c86','1608571423902-eed4a5ad8108',
                          '1603006905003-be475563bc59','1615486511484-92e172cc4fe0',
                          '1571875257727-256c39da42af','1605651202774-7d573fd3f12d',
                          '1608181831042-c5a1e1d1aff7','1602874801006-64c78b297c86'][index % 8]
                       }?w=600&h=600&fit=crop`}
                       alt={category.name}
-                      className="img-zoom w-full h-full object-cover"
+                      className="img-zoom w-full h-full object-contain"
                     />
                   </div>
                   {/* Overlay on hover */}

@@ -112,10 +112,10 @@ useEffect(() => {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(p =>
-        p.name.toLowerCase().includes(query) ||
-        p.description.toLowerCase().includes(query) ||
-        (p.fragrance && p.fragrance.toLowerCase().includes(query))
-      );
+  p.category === selectedCategory ||
+  p.categoryName?.toLowerCase() === selectedCategory?.toLowerCase() ||
+  p.categoryName?.toLowerCase().replace(/\s+/g, '-') === selectedCategory?.toLowerCase()
+);
     }
 
     switch (sortBy) {

@@ -425,7 +425,7 @@ const HomePage = () => {
                 <div
                   key={category._id}
                   className="cat-card group relative overflow-hidden bg-white rounded-2xl shadow-md cursor-pointer"
-                  onClick={() => navigate(`/products?category=${category._id}`)}
+                  onClick={() => navigate(`/products?category=${category.name}`)}
                 >
                   <div className="aspect-square overflow-hidden">
                     <img

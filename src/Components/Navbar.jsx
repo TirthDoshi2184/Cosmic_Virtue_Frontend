@@ -242,7 +242,7 @@ const Navbar = () => {
                 </button>
                 {bathDropdown && (
                   <div className="absolute top-full left-0 mt-[18px] w-44 bg-white rounded-xl shadow-xl border border-gray-100 py-2 animate-slideDown">
-                    {[['Bath Salt', 'bath-salt'], 
+                    {[['Bath Salts', 'Bath Salts'], 
                     // ['Bath Bomb', 'bath-bomb']
                   ].map(([label, slug]) => (
                       <a key={slug} href={`/products?category=${slug}`} className="block px-4 py-2.5 text-sm text-gray-600 hover:bg-purple-50 hover:text-purple-700 transition-colors rounded-lg mx-1">
@@ -260,7 +260,7 @@ const Navbar = () => {
               </a> */}
 
               {/* Wax Sachet */}
-              <a href="/products?category=wax sachets" className={desktopLink}>
+              <a href="/products?category=Wax Sachets" className={desktopLink}>
                 Wax Sachet
                 <span className={underline}></span>
               </a>
@@ -376,7 +376,7 @@ const Navbar = () => {
               isOpen={mobileBathOpen}
               onToggle={() => setMobileBathOpen(!mobileBathOpen)}
             >
-              {[['Bath Salt', 'bath-salt'], 
+              {[['Bath Salts', 'Bath Salts'], 
               // ['Bath Bomb', 'bath-bomb']
             ].map(([label, slug]) => (
                 <a key={slug} href={`/products?category=${slug}`} className="block px-4 py-2.5 text-sm text-gray-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-all" onClick={() => setMobileMenuOpen(false)}>
@@ -391,7 +391,7 @@ const Navbar = () => {
             </a> */}
 
             {/* Wax Sachet */}
-            <a href="/products?category=wax-sachet" className="flex items-center px-4 py-3 text-gray-700 font-medium text-sm rounded-xl hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 transition-all duration-200" onClick={() => setMobileMenuOpen(false)}>
+            <a href="/products?category=Wax Sachets" className="flex items-center px-4 py-3 text-gray-700 font-medium text-sm rounded-xl hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 transition-all duration-200" onClick={() => setMobileMenuOpen(false)}>
               Wax Sachet
             </a>
 

@@ -49,8 +49,8 @@ useEffect(() => {
       }
 
       const data = await response.json();
-      console.log(data.data);
-      
+      console.log('.....',data.data);
+      console.log('categories', data.data.category);
 
       const transformedProducts = data.data.map(product => ({
         id: product._id,
@@ -95,7 +95,7 @@ useEffect(() => {
 
     if (selectedCategory !== 'all') {
       filtered = filtered.filter(p => 
-  p.category === selectedCategory
+  p.categoryName?.toLowerCase() === selectedCategory?.toLowerCase()
 );
     }
 
@@ -109,15 +109,14 @@ useEffect(() => {
       });
     }
 
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(p =>
-  p.category === selectedCategory ||
-  p.categoryName?.toLowerCase() === selectedCategory?.toLowerCase() ||
-  p.categoryName?.toLowerCase().replace(/\s+/g, '-') === selectedCategory?.toLowerCase()
-);
-    }
-
+if (searchQuery.trim()) {
+  const query = searchQuery.toLowerCase();
+  filtered = filtered.filter(p =>
+    p.name.toLowerCase().includes(query) ||
+    p.description.toLowerCase().includes(query) ||
+    (p.fragrance && p.fragrance.toLowerCase().includes(query))
+  );
+}
     switch (sortBy) {
       case 'price-low':
         filtered.sort((a, b) => a.price - b.price);
@@ -427,9 +426,9 @@ const paginatedProducts = filteredProducts.slice(
             </button>
             {categories.map((cat) => (
               <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`cat-tab px-4 py-4 text-sm ${selectedCategory === cat.id ? 'active' : ''}`}
+                key={cat.name}
+                onClick={() => setSelectedCategory(cat.name)}
+                className={`cat-tab px-4 py-4 text-sm ${selectedCategory === cat.name ? 'active' : ''}`}
               >
                 {cat.name}
               </button>

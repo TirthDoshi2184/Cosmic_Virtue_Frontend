@@ -42,7 +42,7 @@ useEffect(() => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${API_BASE_URL}/products`);
+      const response = await fetch(`${API_BASE_URL}/products?limit=100`);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -395,12 +395,12 @@ const paginatedProducts = filteredProducts.slice(
 
       {/* ── STATS BAR ── */}
       <div className="bg-white border-b border-gray-100 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-4 divide-x divide-gray-100">
+        <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 grid grid-cols-3  divide-x divide-gray-100">
           {[
             { value: `${products.length}+`, label: 'Products' },
             { value: `${maxDiscount}%`, label: 'Max Discount' },
             { value: `${topRating}★`, label: 'Top Rated' },
-            { value: 'Free', label: 'Shipping' },
+            
           ].map((stat, i) => (
             <div key={i} className="py-3 px-3 text-center">
               <div className="text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent" style={{ fontFamily: "'Playfair Display', serif" }}>

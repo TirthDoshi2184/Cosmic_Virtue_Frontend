@@ -1,5 +1,8 @@
   const SKIP_OTP = false; // 🔥 DEV ONLY
 
+  import { auth } from '../utils/firebase';
+  import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
+
   import React, { useState, useEffect } from "react";
   import {
     CreditCard,
@@ -36,11 +39,13 @@
     const [showOrderSummary, setShowOrderSummary] = useState(true);
 
     // Add these new state variables
-    const [emailVerified, setEmailVerified] = useState(false);
+    const [phoneVerified, setPhoneVerified] = useState(false);
     const [otpSent, setOtpSent] = useState(false);
     const [otp, setOtp] = useState("");
     const [verifying, setVerifying] = useState(false);
     const [shippingCharge, setShippingCharge] = useState(50); // default fallback
+
+    const [confirmationResult, setConfirmationResult] = useState(null);
 
     const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -119,77 +124,118 @@
     // Add these functions after getSavedAddresses()
 
     // CHANGE: sendOTP function
-    const sendOTP = async () => {
-      if (SKIP_OTP) {
-        setEmailVerified(true); // CHANGED
-        alert("OTP skipped (development mode)");
-        return;
+const sendOTP = async () => {
+  if (SKIP_OTP) {
+    setPhoneVerified(true);
+    alert('OTP skipped (development mode)');
+    return;
+  }
+
+  const phone = contactInfo.phone;
+  if (!/^[0-9]{10}$/.test(phone)) {
+    alert('Please enter a valid 10-digit phone number');
+    return;
+  }
+
+  setVerifying(true);
+
+  try {
+    // Clear any existing reCAPTCHA before creating new one
+    if (window.recaptchaVerifier) {
+      window.recaptchaVerifier.clear();
+      window.recaptchaVerifier = null;
+    }
+
+    // Always create fresh reCAPTCHA
+    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+      size: 'invisible',
+      callback: () => {},
+      'expired-callback': () => {
+        window.recaptchaVerifier = null;
       }
+    });
 
-      const email = contactInfo.email; // CHANGED: phone → email
+    await window.recaptchaVerifier.render();
 
-      if (!/\S+@\S+\.\S+/.test(email)) {
-        // CHANGED: validation
-        alert("Please enter a valid email address");
-        return;
-      }
+    const result = await signInWithPhoneNumber(
+      auth,
+      `+91${phone}`,
+      window.recaptchaVerifier
+    );
 
-      setVerifying(true);
+    setConfirmationResult(result);
+    setOtpSent(true);
+    alert('OTP sent to your phone!');
 
-      const response = await fetch(`${API_BASE_URL}/checkout/auth/send-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }), // CHANGED
-      });
+  } catch (error) {
+    console.error('Firebase OTP error:', error);
+    // Always clean up on error
+    if (window.recaptchaVerifier) {
+      window.recaptchaVerifier.clear();
+      window.recaptchaVerifier = null;
+    }
+    alert('Failed to send OTP: ' + error.message);
+  }
 
-      const data = await response.json();
-
-      if (data.success) {
-        setOtpSent(true);
-        alert("OTP sent to your email!"); // CHANGED message
-      }
-
-      setVerifying(false);
-    };
-
+  setVerifying(false);
+};
     // CHANGE: verifyOTP function
     const verifyOTP = async () => {
-      if (SKIP_OTP) {
-        setEmailVerified(true); // CHANGED
-        localStorage.setItem("userEmail", contactInfo.email); // CHANGED
-        localStorage.setItem("emailVerified", "true"); // CHANGED
-        alert("Email verified (skipped)");
-        return;
-      }
+  if (SKIP_OTP) {
+    setPhoneVerified(true);
+    localStorage.setItem('userPhone', contactInfo.phone);
+    localStorage.setItem('phoneVerified', 'true');
+    return;
+  }
 
-      setVerifying(true);
+  if (!confirmationResult) {
+    alert('Please request OTP first');
+    return;
+  }
 
-      const response = await fetch(`${API_BASE_URL}/checkout/auth/verify-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: contactInfo.email, // CHANGED
-          otp: otp,
-        }),
-      });
+  setVerifying(true);
 
-      const data = await response.json();
+  try {
+    // Verify OTP with Firebase
+    const userCredential = await confirmationResult.confirm(otp);
 
-      if (data.success) {
-        setEmailVerified(true); // CHANGED
-        localStorage.setItem("userEmail", contactInfo.email); // CHANGED
-        localStorage.setItem("emailVerified", "true"); // CHANGED
-        loadAddressesByEmail(contactInfo.email); // CHANGED
-        alert("Email verified successfully! ✓");
-      }
+    // Get Firebase token to send to your backend
+    const firebaseToken = await userCredential.user.getIdToken();
 
-      setVerifying(false);
-    };
-    // CHANGE: Load addresses by email
-    const loadAddressesByEmail = (email) => {
+    // Verify token with your backend
+    const response = await fetch(`${API_BASE_URL}/checkout/auth/verify-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone: contactInfo.phone,
+        firebaseToken,           // send token instead of otp
+      }),
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      setPhoneVerified(true);
+      localStorage.setItem('userPhone', contactInfo.phone);
+      localStorage.setItem('phoneVerified', 'true');
+      loadAddressesByPhone(contactInfo.phone);
+      alert('Phone verified successfully! ✓');
+    } else {
+      alert(data.message || 'Verification failed');
+    }
+
+  } catch (error) {
+    console.error('OTP verify error:', error);
+    alert('Invalid OTP. Please try again.');
+  }
+
+  setVerifying(false);
+};
+    // CHANGE: Load addresses by phone
+    const loadAddressesByPhone = (phone) => {
       // CHANGED
       try {
-        const key = `savedAddresses_${email}`; // CHANGED
+        const key = `savedAddresses_${phone}`; // CHANGED
         const addresses = JSON.parse(localStorage.getItem(key) || "[]");
         setSavedAddresses(addresses);
       } catch (error) {
@@ -197,24 +243,23 @@
       }
     };
 
-    // CHANGE: Save address with email
-    const saveAddressWithEmail = (address) => {
+    // CHANGE: Save address with phone
+    const saveAddressWithPhone   = (address) => {
       // CHANGED
-      const email = contactInfo.email; // CHANGED
+      const phone = contactInfo.phone; // CHANGED
 
-      if (!emailVerified) {
+      if (!phoneVerified) {
         // CHANGED
-        alert("Please verify your email first");
+        alert("Please verify your phone number first");
         return;
       }
 
-      const key = `savedAddresses_${email}`; // CHANGED
+      const key = `savedAddresses_${phone}`; // CHANGED
       const addresses = JSON.parse(localStorage.getItem(key) || "[]");
 
       const newAddress = {
         id: Date.now(),
-        email: email, // CHANGED
-        phone: contactInfo.phone, // KEEP: optional
+        phone: phone, // CHANGED
         ...address,
         savedAt: new Date().toISOString(),
       };
@@ -344,14 +389,13 @@ const checkPincodeServiceability = async (pincode) => {
       setCartItems(cart);
 
       // ADD THESE LINES:
-      const savedEmail = localStorage.getItem("userEmail");
-      const wasVerified = localStorage.getItem("emailVerified");
-
-      if (savedEmail && wasVerified === "true") {
-        setContactInfo(prev => ({ ...prev, email: savedEmail }));
-        setEmailVerified(true);
-        loadAddressesByEmail(savedEmail);
-      } else {
+      const savedPhone = localStorage.getItem('userPhone');
+const wasVerified = localStorage.getItem('phoneVerified');
+if (savedPhone && wasVerified === 'true') {
+  setContactInfo(prev => ({ ...prev, phone: savedPhone }));
+  setPhoneVerified(true);
+  loadAddressesByPhone(savedPhone);
+}else {
         const addresses = getSavedAddresses();
         setSavedAddresses(addresses);
       }
@@ -363,7 +407,7 @@ const checkPincodeServiceability = async (pincode) => {
   };
   
   if (SKIP_OTP) {
-    setEmailVerified(true);
+    setPhoneVerified(true);
   }
 
   loadCart();
@@ -457,21 +501,21 @@ const checkPincodeServiceability = async (pincode) => {
 
       if (activeStep === 1) {
         // ADD THIS CHECK:
-        if (!emailVerified) {
-          alert("Please verify your email to continue");
+        if (!phoneVerified) {
+          alert("Please verify your phone number to continue");
           return;
         }
         newErrors = validateContactInfo();
       } else if (activeStep === 2) {
         newErrors = { ...validateShippingAddress(), ...validateBillingAddress() };
 
-        // REPLACE saveAddressToLocal with saveAddressWithEmail:
-        if (Object.keys(newErrors).length === 0 && saveAddress && emailVerified) {
+        // REPLACE saveAddressToLocal with saveAddressWithPhone:
+        if (Object.keys(newErrors).length === 0 && saveAddress && phoneVerified) {
           const addressToSave = {
             ...contactInfo,
             ...shippingAddress,
           };
-          saveAddressWithEmail(addressToSave); // CHANGED THIS LINE
+          saveAddressWithPhone(addressToSave); // CHANGED THIS LINE
         }
       }
 
@@ -536,7 +580,7 @@ const checkPincodeServiceability = async (pincode) => {
       items:          cartItems,
       paymentMethod,
       pricing: { subtotal, shipping, total },
-      emailVerified,
+      phoneVerified,
       userId
     };
 
@@ -953,202 +997,199 @@ const checkPincodeServiceability = async (pincode) => {
                   </div>
 
                   <div className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          First Name *
-                        </label>
-                        <div className="relative">
-                          <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                          <input
-                            type="text"
-                            value={contactInfo.firstName}
-                            onChange={(e) =>
-                              setContactInfo({
-                                ...contactInfo,
-                                firstName: e.target.value,
-                              })
-                            }
-                            className={`w-full pl-10 pr-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
-                              errors.firstName
-                                ? "border-red-500"
-                                : "border-gray-200"
-                            }`}
-                            placeholder="John"
-                          />
-                        </div>
-                        {errors.firstName && (
-                          <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                            <AlertCircle className="w-3 h-3" /> {errors.firstName}
-                          </p>
-                        )}
-                      </div>
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div>
+      <label className="block text-sm font-semibold text-gray-700 mb-2">
+        First Name *
+      </label>
+      <div className="relative">
+        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <input
+          type="text"
+          value={contactInfo.firstName}
+          onChange={(e) =>
+            setContactInfo({ ...contactInfo, firstName: e.target.value })
+          }
+          className={`w-full pl-10 pr-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
+            errors.firstName ? "border-red-500" : "border-gray-200"
+          }`}
+          placeholder="John"
+        />
+      </div>
+      {errors.firstName && (
+        <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+          <AlertCircle className="w-3 h-3" /> {errors.firstName}
+        </p>
+      )}
+    </div>
 
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Last Name *
-                        </label>
-                        <div className="relative">
-                          <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                          <input
-                            type="text"
-                            value={contactInfo.lastName}
-                            onChange={(e) =>
-                              setContactInfo({
-                                ...contactInfo,
-                                lastName: e.target.value,
-                              })
-                            }
-                            className={`w-full pl-10 pr-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
-                              errors.lastName
-                                ? "border-red-500"
-                                : "border-gray-200"
-                            }`}
-                            placeholder="Doe"
-                          />
-                        </div>
-                        {errors.lastName && (
-                          <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                            <AlertCircle className="w-3 h-3" /> {errors.lastName}
-                          </p>
-                        )}
-                      </div>
-                    </div>
+    <div>
+      <label className="block text-sm font-semibold text-gray-700 mb-2">
+        Last Name *
+      </label>
+      <div className="relative">
+        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <input
+          type="text"
+          value={contactInfo.lastName}
+          onChange={(e) =>
+            setContactInfo({ ...contactInfo, lastName: e.target.value })
+          }
+          className={`w-full pl-10 pr-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
+            errors.lastName ? "border-red-500" : "border-gray-200"
+          }`}
+          placeholder="Doe"
+        />
+      </div>
+      {errors.lastName && (
+        <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+          <AlertCircle className="w-3 h-3" /> {errors.lastName}
+        </p>
+      )}
+    </div>
+  </div>
 
-                    {/* CHANGE: Email verification section */}
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Email Address *{" "}
-                        {emailVerified && (
-                          <span className="text-green-600 ml-2">✓ Verified</span>
-                        )}
-                      </label>
-                      <div className="flex gap-2">
-                        <div className="relative flex-1">
-                          <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                          <input
-                            type="email"
-                            value={contactInfo.email}
-                            onChange={(e) => {
-                              setContactInfo({
-                                ...contactInfo,
-                                email: e.target.value,
-                              });
-                              setEmailVerified(false); // CHANGED
-                              setOtpSent(false);
-                            }}
-                            disabled={!SKIP_OTP && emailVerified} // CHANGED
-                            className={`w-full pl-10 pr-4 py-3 border-2 rounded-lg ${
-                              emailVerified
-                                ? "border-green-500 bg-green-50"
-                                : "border-gray-200"
-                            }`}
-                            placeholder="your.email@example.com"
-                          />
-                        </div>
+  {/* Email Address - plain input, no OTP */}
+  <div>
+    <label className="block text-sm font-semibold text-gray-700 mb-2">
+      Email Address *
+    </label>
+    <div className="relative">
+      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+      <input
+        type="email"
+        value={contactInfo.email}
+        onChange={(e) =>
+          setContactInfo({ ...contactInfo, email: e.target.value })
+        }
+        className={`w-full pl-10 pr-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
+          errors.email ? "border-red-500" : "border-gray-200"
+        }`}
+        placeholder="your.email@example.com"
+      />
+    </div>
+    {errors.email && (
+      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+        <AlertCircle className="w-3 h-3" /> {errors.email}
+      </p>
+    )}
+  </div>
 
-                        {!emailVerified && (
-                          <button
-                            onClick={sendOTP}
-                            disabled={
-                              verifying ||
-                              !contactInfo.email ||
-                              !/\S+@\S+\.\S+/.test(contactInfo.email)
-                            }
-                            className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-lg"
-                          >
-                            {verifying ? (
-                              <Loader2 className="w-5 h-5 animate-spin" />
-                            ) : otpSent ? (
-                              "Resend OTP"
-                            ) : (
-                              "Send OTP"
-                            )}
-                          </button>
-                        )}
-                      </div>
-                    </div>
+  {/* Phone Number - OTP verification via MSG91 */}
+  <div>
+    <label className="block text-sm font-semibold text-gray-700 mb-2">
+      Phone Number *{" "}
+      {phoneVerified && (
+        <span className="text-green-600 ml-2">✓ Verified</span>
+      )}
+    </label>
+    <div className="flex gap-2">
+      <div className="relative flex-1">
+        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <input
+          type="tel"
+          value={contactInfo.phone}
+          onChange={(e) => {
+            const val = e.target.value.replace(/\D/g, "").slice(0, 10);
+            setContactInfo({ ...contactInfo, phone: val });
+            setPhoneVerified(false);
+            setOtpSent(false);
+          }}
+          disabled={!SKIP_OTP && phoneVerified}
+          className={`w-full pl-10 pr-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
+            phoneVerified
+              ? "border-green-500 bg-green-50"
+              : errors.phone
+              ? "border-red-500"
+              : "border-gray-200"
+          }`}
+          placeholder="9876543210"
+          maxLength="10"
+        />
+      </div>
 
-                    {/* OTP Input Section */}
-                    {otpSent && !emailVerified && (
-                      <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Enter OTP
-                        </label>
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            value={otp}
-                            onChange={(e) =>
-                              setOtp(
-                                e.target.value.replace(/\D/g, "").slice(0, 6),
-                              )
-                            }
-                            className="flex-1 px-4 py-3 border-2 border-purple-300 rounded-lg"
-                            placeholder="Enter 6-digit OTP"
-                            maxLength="6"
-                          />
-                          <button
-                            onClick={verifyOTP}
-                            disabled={verifying || otp.length !== 6}
-                          >
-                            {verifying ? (
-                              <Loader2 className="w-5 h-5 animate-spin" />
-                            ) : (
-                              "Verify"
-                            )}
-                          </button>
-                        </div>
-                        <p className="text-xs text-purple-700 mt-2">
-                          OTP sent to {contactInfo.email} (check spam folder if not received)
-                        </p>
-                      </div>
-                    )}
+      {!phoneVerified && (
+        <button
+          onClick={sendOTP}
+          disabled={
+            verifying ||
+            !contactInfo.phone ||
+            !/^[0-9]{10}$/.test(contactInfo.phone)
+          }
+          className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {verifying ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : otpSent ? (
+            "Resend OTP"
+          ) : (
+            "Send OTP"
+          )}
+        </button>
+      )}
+    </div>
+    {errors.phone && (
+      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+        <AlertCircle className="w-3 h-3" /> {errors.phone}
+      </p>
+    )}
+  </div>
 
-                    {/* CHANGE: Phone is now optional and non-verified */}
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Phone Number (for delivery contact)
-                      </label>
-                      <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <input
-                          type="tel"
-                          value={contactInfo.phone}
-                          onChange={(e) =>
-                            setContactInfo({
-                              ...contactInfo,
-                              phone: e.target.value,
-                            })
-                          }
-                          className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg"
-                          placeholder="9876543210 (Optional)"
-                        />
-                      </div>
-                    </div>
+  {/* OTP Input Box - shown after Send OTP */}
+  {otpSent && !phoneVerified && (
+    <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+      <label className="block text-sm font-semibold text-gray-700 mb-2">
+        Enter OTP
+      </label>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={otp}
+          onChange={(e) =>
+            setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
+          }
+          className="flex-1 px-4 py-3 border-2 border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+          placeholder="Enter 6-digit OTP"
+          maxLength="6"
+        />
+        <button
+          onClick={verifyOTP}
+          disabled={verifying || otp.length !== 6}
+          className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {verifying ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            "Verify"
+          )}
+        </button>
+      </div>
+      <p className="text-xs text-purple-700 mt-2">
+        OTP sent to +91 {contactInfo.phone}. Valid for 5 minutes.
+      </p>
+    </div>
+  )}
+</div>
 
-                    
-                  </div>
-
-                  <div className="mt-8">
-                    <button
-                      onClick={handleNextStep}
-                      disabled={!emailVerified}
-                      className="w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {!emailVerified ? (
-                        <>
-                          <Lock className="w-5 h-5" />
-                          Verify Email to Continue
-                        </>
-                      ) : (
-                        <>
-                          Continue to Shipping
-                          <ChevronRight className="w-5 h-5" />
-                        </>
-                      )}
-                    </button>
-                  </div>
+<div className="mt-8">
+  <button
+    onClick={handleNextStep}
+    disabled={!phoneVerified}
+    className="w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+  >
+    {!phoneVerified ? (
+      <>
+        <Lock className="w-5 h-5" />
+        Verify Phone to Continue
+      </>
+    ) : (
+      <>
+        Continue to Shipping
+        <ChevronRight className="w-5 h-5" />
+      </>
+    )}
+  </button>
+</div>
                 </div>
               )}
 
@@ -1775,6 +1816,8 @@ const checkPincodeServiceability = async (pincode) => {
             </div>
           </div>
         </div>
+        {/* Firebase invisible reCAPTCHA - required, do not remove */}
+<div id="recaptcha-container"></div>
       </div>
     );
   };

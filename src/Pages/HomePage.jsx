@@ -49,46 +49,36 @@ const HomePage = () => {
   const navigate = useNavigate();
 
   // Fetch products
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/products`);
-        const data = await response.json();
-        if (data.data) {
-          setNewArrivals(data.data.filter(p => p.isNewArrival === true));
-          setBestSellers(data.data.filter(p => p.isBestSeller === true));
-        }
-      } catch (error) {
-        console.error('Error fetching products:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProducts();
-  }, []);
+// Replace the two separate useEffects with one
+useEffect(() => {
+  const fetchAll = async () => {
+    try {
+      const [newArrivalsRes, bestSellersRes, categoriesRes] = await Promise.all([
+        fetch(`${import.meta.env.VITE_API_URL}/products/new-arrivals`),
+        fetch(`${import.meta.env.VITE_API_URL}/products/best-sellers`),
+        fetch(`${import.meta.env.VITE_API_URL}/categories?activeOnly=true`)
+      ]);
 
-  // Fetch categories
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        setCategoriesLoading(true);
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/categories`);
-        const data = await response.json();
-        
-        console.log(data.data);
-        if (data.data && Array.isArray(data.data)) {
-  setCategories(data.data.filter(cat => cat.isactive === true));
-}
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-      } finally {
-        setCategoriesLoading(false);
-      }
-    };
-    fetchCategories();
-  }, []);
+      const [newArrivalsData, bestSellersData, categoriesData] = await Promise.all([
+        newArrivalsRes.json(),
+        bestSellersRes.json(),
+        categoriesRes.json()
+      ]);
+      console.log("fetched data:", newArrivalsData, bestSellersData, categoriesData);
+      
+      if (newArrivalsData.data) setNewArrivals(newArrivalsData.data);
+      if (bestSellersData.data) setBestSellers(bestSellersData.data);
+      if (categoriesData.data) setCategories(categoriesData.data);
 
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+      setCategoriesLoading(false);
+    }
+  };
+  fetchAll();
+}, []);
   const API_BASE_URL = import.meta.env.VITE_API_URL;
 
   const isUserLoggedIn = () => !!localStorage.getItem('token');
@@ -554,7 +544,7 @@ const HomePage = () => {
                   {/* Image */}
                   <div className="relative aspect-square overflow-hidden bg-gray-50">
                     <img
-                      src={product.img || 'https://images.unsplash.com/photo-1602874801006-64c78b297c86?w=600&h=600&fit=crop'}
+                      src={product.img[0] || 'https://images.unsplash.com/photo-1602874801006-64c78b297c86?w=600&h=600&fit=crop'}
                       alt={product.name}
                       className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700"
                       style={{ transition: 'transform 0.7s cubic-bezier(0.25,0.46,0.45,0.94)' }}

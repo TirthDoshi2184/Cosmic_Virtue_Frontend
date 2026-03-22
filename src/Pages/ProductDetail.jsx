@@ -18,6 +18,11 @@ const ProductDetail = () => {
 
   const API_BASE_URL = import.meta.env.VITE_API_URL;
 
+  const getOptimizedImageUrl = (url) => {
+  if (!url || !url.includes('cloudinary.com')) return url;
+  return url.replace('/upload/', '/upload/q_100,f_auto,fl_progressive/');
+};
+
   // ============================================
   // CART UTILITY FUNCTIONS (INTEGRATED)
   // ============================================
@@ -178,18 +183,18 @@ const ProductDetail = () => {
   useEffect(() => {
     const fetchRelatedProducts = async (categoryId) => {
       try {
-        const response = await fetch(`${API_BASE_URL}/products`);
-        const data = await response.json();
-        const related = data.data
-          .filter(p => p.category?._id === categoryId && p._id !== id)
-          .slice(0, 4)
-          .map(p => ({
-            id: p._id,
-            name: p.name,
-            price: p.price,
-            image: p.img || 'https://images.unsplash.com/photo-1602874801006-47c1c969a405?w=400&h=400&fit=crop',
-            rating: 4.5
-          }));
+        const response = await fetch(`${API_BASE_URL}/products?category=${product.category.name}&limit=100`);
+const data = await response.json();
+const related = data.data
+  .filter(p => p._id !== id)
+  .slice(0, 4)
+  .map(p => ({
+    id: p._id,
+    name: p.name,
+    price: p.price,
+    image: Array.isArray(p.img) ? p.img[0] : p.img,
+    rating: p.rating || 4.5
+  }));
         setRelatedProducts(related);
       } catch (err) {
         console.error('Error fetching related products:', err);
@@ -375,9 +380,9 @@ const ProductDetail = () => {
                     }`}
                   >
                     <img
-                      src={image}
-                      alt={`Product ${index + 1}`}
-                      className="w-full h-full object-cover"
+                      src={getOptimizedImageUrl(image)}
+alt={`Product ${index + 1}`}
+className="w-full h-full object-contain p-1"
                       onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1602874801006-64c78b297c86?w=200&h=200&fit=crop'; }}
                     />
                   </button>
@@ -386,11 +391,12 @@ const ProductDetail = () => {
             )}
 
             {/* Main Image */}
-            <div className="relative flex-1 bg-white rounded-2xl overflow-hidden shadow-xl" style={{ aspectRatio: '1/1',maxHeight: '560px'  }}>
-              <img
-                src={productImages[selectedImage] || 'https://images.unsplash.com/photo-1602874801006-64c78b297c86?w=800&h=800&fit=crop'}
-                alt={product.name}
-                className="w-full h-full object-cover object-center transition-opacity duration-300"
+            <div className="relative flex-1 bg-white rounded-2xl overflow-hidden shadow-xl" style={{ aspectRatio: '4/3' }}>
+  <img
+    src={getOptimizedImageUrl(productImages[selectedImage]) || '...'}
+    alt={product.name}
+    className="w-full h-full object-contain transition-opacity duration-300"
+    style={{ padding: '12px' }}
                 onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1602874801006-64c78b297c86?w=800&h=800&fit=crop'; }}
               />
 
@@ -684,9 +690,9 @@ const ProductDetail = () => {
                 >
                   <div className="overflow-hidden bg-gray-50" style={{ aspectRatio: '1/1'}}>
                     <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-full h-full object-cover"
+                      src={getOptimizedImageUrl(item.image)}
+alt={item.name}
+className="w-full h-full object-contain p-2"
                       onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1602874801006-64c78b297c86?w=400&h=400&fit=crop'; }}
                     />
                   </div>

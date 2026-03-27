@@ -134,7 +134,7 @@ export default function Footer() {
       { label: 'FAQs',            href: '/contact' },
       { label: 'Shipping Policy', href: '/shipping-policy' },
       { label: 'Returns',         href: '/returns' },
-      { label: 'Privacy Policy',  href: '/privacy-policy' },
+      { label: 'Privacy Policy',  href: '/privacy' },
     ].map((item) => (
       <li key={item.label}>
         <a

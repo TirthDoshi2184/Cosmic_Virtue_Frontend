@@ -80,6 +80,15 @@
     const [paymentMethod, setPaymentMethod] = useState("online");
     const [saveAddress, setSaveAddress] = useState(false);
 
+// Cleanup reCAPTCHA on unmount only
+useEffect(() => {
+  return () => {
+    if (window.recaptchaVerifier) {
+      window.recaptchaVerifier.clear();
+      window.recaptchaVerifier = null;
+    }
+  };
+}, []);// runs once on mount
     // ============================================
     // UTILITY FUNCTIONS
     // ============================================
@@ -140,20 +149,32 @@ const sendOTP = async () => {
   setVerifying(true);
 
   try {
-    // Clear any existing reCAPTCHA before creating new one
+    // Destroy old verifier
     if (window.recaptchaVerifier) {
-      window.recaptchaVerifier.clear();
+      try { window.recaptchaVerifier.clear(); } catch (e) {}
       window.recaptchaVerifier = null;
     }
 
-    // Always create fresh reCAPTCHA
-    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-      size: 'invisible',
-      callback: () => {},
-      'expired-callback': () => {
-        window.recaptchaVerifier = null;
+    // Remove old container and create a fresh one
+    const oldContainer = document.getElementById('recaptcha-container');
+    if (oldContainer) oldContainer.remove();
+
+    const newContainer = document.createElement('div');
+    newContainer.id = 'recaptcha-container';
+    document.body.appendChild(newContainer);
+
+    // Create fresh verifier on the new container
+    window.recaptchaVerifier = new RecaptchaVerifier(
+      auth,
+      'recaptcha-container',
+      {
+        size: 'invisible',
+        callback: () => {},
+        'expired-callback': () => {
+          window.recaptchaVerifier = null;
+        }
       }
-    });
+    );
 
     await window.recaptchaVerifier.render();
 
@@ -168,18 +189,22 @@ const sendOTP = async () => {
     alert('OTP sent to your phone!');
 
   } catch (error) {
-    console.error('Firebase OTP error:', error);
-    // Always clean up on error
-    if (window.recaptchaVerifier) {
-      window.recaptchaVerifier.clear();
-      window.recaptchaVerifier = null;
-    }
+    console.log();
+    
+    console.error('Firebase OTP error:', error.code, error.message);
+    try { 
+      if (window.recaptchaVerifier) {
+        window.recaptchaVerifier.clear();
+        window.recaptchaVerifier = null;
+      }
+    } catch (e) {}
     alert('Failed to send OTP: ' + error.message);
   }
 
   setVerifying(false);
 };
-    // CHANGE: verifyOTP function
+
+// CHANGE: verifyOTP function
     const verifyOTP = async () => {
   if (SKIP_OTP) {
     setPhoneVerified(true);
@@ -1816,8 +1841,7 @@ if (savedPhone && wasVerified === 'true') {
             </div>
           </div>
         </div>
-        {/* Firebase invisible reCAPTCHA - required, do not remove */}
-<div id="recaptcha-container"></div>
+   
       </div>
     );
   };

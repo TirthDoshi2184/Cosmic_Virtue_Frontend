@@ -132,7 +132,7 @@ export default function Footer() {
       { label: 'About Us',        href: '/about' },
       { label: 'Contact',         href: '/contact' },
       { label: 'FAQs',            href: '/contact' },
-      { label: 'Shipping Policy', href: '/shipping-policy' },
+      { label: 'Terms & Conditions', href: '/term' },
       { label: 'Returns',         href: '/returns' },
       { label: 'Privacy Policy',  href: '/privacy' },
     ].map((item) => (

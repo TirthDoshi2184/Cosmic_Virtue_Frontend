@@ -25,6 +25,7 @@ import OrderHistoryPage from "./Pages/OrderHistory";
 import Categories from "./Pages/CategoryPage";
 import WishlistPage from "./Pages/WishlistPage";
 import PrivacyPolicy from "./Pages/Privacy_Policy";
+import TermsAndConditions from "./Pages/Terms_Condition_Page";
 
 // ScrollToTop Component
 function ScrollToTop() {
@@ -72,6 +73,7 @@ function App() {
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/term" element={<TermsAndConditions/>}/>
         {/* <Route path="/profile" element={<Profile />} /> */}
         <Route path="/order-success" element={<OrderHistoryPage />} />
         

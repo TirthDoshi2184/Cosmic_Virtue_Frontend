@@ -134,12 +134,6 @@ useEffect(() => {
 
     // CHANGE: sendOTP function
 const sendOTP = async () => {
-  if (SKIP_OTP) {
-    setPhoneVerified(true);
-    alert('OTP skipped (development mode)');
-    return;
-  }
-
   const phone = contactInfo.phone;
   if (!/^[0-9]{10}$/.test(phone)) {
     alert('Please enter a valid 10-digit phone number');
@@ -149,24 +143,16 @@ const sendOTP = async () => {
   setVerifying(true);
 
   try {
-    // Destroy old verifier
+    // Clear old verifier if exists
     if (window.recaptchaVerifier) {
       try { window.recaptchaVerifier.clear(); } catch (e) {}
       window.recaptchaVerifier = null;
     }
 
-    // Remove old container and create a fresh one
-    const oldContainer = document.getElementById('recaptcha-container');
-    if (oldContainer) oldContainer.remove();
-
-    const newContainer = document.createElement('div');
-    newContainer.id = 'recaptcha-container';
-    document.body.appendChild(newContainer);
-
-    // Create fresh verifier on the new container
+    // Create verifier on the STATIC div already in DOM
     window.recaptchaVerifier = new RecaptchaVerifier(
       auth,
-      'recaptcha-container',
+      'recaptcha-container',  // must already exist in DOM
       {
         size: 'invisible',
         callback: () => {},
@@ -175,8 +161,6 @@ const sendOTP = async () => {
         }
       }
     );
-
-    await window.recaptchaVerifier.render();
 
     const result = await signInWithPhoneNumber(
       auth,
@@ -189,21 +173,16 @@ const sendOTP = async () => {
     alert('OTP sent to your phone!');
 
   } catch (error) {
-    console.log();
-    
     console.error('Firebase OTP error:', error.code, error.message);
-    try { 
-      if (window.recaptchaVerifier) {
-        window.recaptchaVerifier.clear();
-        window.recaptchaVerifier = null;
-      }
-    } catch (e) {}
+    if (window.recaptchaVerifier) {
+      try { window.recaptchaVerifier.clear(); } catch (e) {}
+      window.recaptchaVerifier = null;
+    }
     alert('Failed to send OTP: ' + error.message);
   }
 
   setVerifying(false);
 };
-
 // CHANGE: verifyOTP function
     const verifyOTP = async () => {
   if (SKIP_OTP) {
@@ -1841,7 +1820,7 @@ if (savedPhone && wasVerified === 'true') {
             </div>
           </div>
         </div>
-   
+   <div id="recaptcha-container"></div>
       </div>
     );
   };

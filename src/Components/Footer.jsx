@@ -10,6 +10,7 @@ import {
   FaFacebookF,
   FaTwitter,
   FaPinterestP,
+  FaWhatsapp,
 } from "react-icons/fa";
 
 export default function Footer() {
@@ -83,9 +84,7 @@ export default function Footer() {
                   <div className="flex items-center gap-3 mt-6">
                     {[
                       { icon: <FaInstagram className="w-4 h-4" />, label: 'Instagram' },
-                      { icon: <FaFacebookF className="w-4 h-4" />, label: 'Facebook' },
-                      { icon: <FaTwitter className="w-4 h-4" />, label: 'Twitter' },
-                      { icon: <FaPinterestP className="w-4 h-4" />, label: 'Pinterest' },
+                      {icon : <FaWhatsapp className="w-4 h-4" />, label:"Whatsapp"}
                     ].map((s, i) => (
                       <button
                         key={i}

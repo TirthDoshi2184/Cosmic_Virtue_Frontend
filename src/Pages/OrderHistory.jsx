@@ -27,9 +27,9 @@ const OrderHistoryPage = () => {
   const [orders, setOrders] = useState([]);
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
-  const [emailVerified, setEmailVerified] = useState(false);
-  const [userEmail, setUserEmail] = useState("");
-  const [showEmailInput, setShowEmailInput] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [userPhone, setUserPhone] = useState("");
+  const [showPhoneInput, setShowPhoneInput] = useState(false);
   const [trackingData, setTrackingData] = useState({});
   const [trackingLoading, setTrackingLoading] = useState({});
 
@@ -48,7 +48,7 @@ const OrderHistoryPage = () => {
   };
 
   const getUserToken = () => localStorage.getItem("userToken");
-  const getSavedEmail = () => localStorage.getItem("userEmail");
+  const getSavedPhone = () => localStorage.getItem("userPhone");
 
   // ============================================
   // FETCH ORDERS
@@ -64,18 +64,18 @@ const OrderHistoryPage = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
       } else {
-        const email = getSavedEmail() || userEmail;
-        if (!email) {
-          setShowEmailInput(true);
+        const phone = getSavedPhone() || userPhone;
+        if (!phone) {
+          setShowPhoneInput(true);
           setLoading(false);
           return;
         }
-        response = await fetch(`${API_BASE_URL}/checkout/orders/email/${email}`);
+        response = await fetch(`${API_BASE_URL}/checkout/orders/phone/${phone}`);
       }
       const data = await response.json();
       if (data.success) {
         setOrders(data.data || []);
-        setEmailVerified(true);
+        setPhoneVerified(true);
       } else {
         throw new Error(data.message);
       }
@@ -107,26 +107,26 @@ const OrderHistoryPage = () => {
   // LOAD ORDERS ON MOUNT
   // ============================================
   useEffect(() => {
-    const savedEmail = getSavedEmail();
-    if (savedEmail) { setUserEmail(savedEmail); setEmailVerified(true); }
-    if (isUserLoggedIn() || savedEmail) {
+    const savedPhone = getSavedPhone();
+    if (savedPhone) { setUserPhone(savedPhone); setPhoneVerified(true); }
+    if (isUserLoggedIn() || savedPhone) {
       fetchOrders();
     } else {
-      setShowEmailInput(true);
+      setShowPhoneInput(true);
       setLoading(false);
     }
   }, []);
 
   // ============================================
-  // EMAIL SUBMIT (GUEST)
+  // PHONE SUBMIT (GUEST)
   // ============================================
-  const handleEmailSubmit = (e) => {
+  const handlePhoneSubmit = (e) => {
     e.preventDefault();
-    if (userEmail && /\S+@\S+\.\S+/.test(userEmail)) {
-      localStorage.setItem("userEmail", userEmail);
+    if (userPhone && /^\d{10}$/.test(userPhone)) {
+      localStorage.setItem("userPhone", userPhone);
       fetchOrders();
     } else {
-      alert("Please enter a valid email address");
+      alert("Please enter a valid phone number");
     }
   };
 
@@ -150,7 +150,7 @@ const OrderHistoryPage = () => {
   const filteredOrders = filterStatus === "all" ? orders : orders.filter(o => o.orderStatus === filterStatus);
   const getOrderNumber = (id) => id.toString().slice(-8).toUpperCase();
   const formatDate = (d) => new Date(d).toLocaleDateString("en-IN", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" });
-
+  const getOrderName = (order) => order.items[0]?.name || "Your Order";
   // ============================================
   // LOADING STATE
   // ============================================
@@ -169,38 +169,38 @@ const OrderHistoryPage = () => {
   }
 
   // ============================================
-  // GUEST EMAIL INPUT
+  // GUEST PHONE INPUT
   // ============================================
-  if (showEmailInput && !emailVerified) {
+  if (showPhoneInput && !phoneVerified) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center p-4">
         <style>{`@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@300;400;600&display=swap');`}</style>
         <div className="bg-white rounded-2xl shadow-xl border border-purple-100 p-8 sm:p-10 max-w-md w-full">
           <div className="text-center mb-8">
             <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-5 shadow-lg">
-              <Mail className="w-8 h-8 text-white" />
+              <Phone className="w-8 h-8 text-white" />
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
               View Your Orders
             </h2>
             <p className="text-gray-500 text-sm" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 300 }}>
-              Enter the email you used when placing your order
+              Enter the phone number you used when placing your order
             </p>
           </div>
 
-          <form onSubmit={handleEmailSubmit} className="space-y-4">
+          <form onSubmit={handlePhoneSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5" style={{ fontFamily: "'Montserrat', sans-serif" }}>
-                Email Address
+                Phone Number
               </label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
-                  type="email"
-                  value={userEmail}
-                  onChange={e => setUserEmail(e.target.value)}
+                  type="tel"
+                  value={userPhone}
+                  onChange={e => setUserPhone(e.target.value)}
                   className="w-full pl-10 pr-4 py-3.5 border-2 border-gray-200 rounded-xl text-sm text-gray-800 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all"
-                  placeholder="your@email.com"
+                  placeholder="your phone number"
                   style={{ fontFamily: "'Montserrat', sans-serif" }}
                   required
                 />
@@ -328,7 +328,7 @@ const OrderHistoryPage = () => {
                   Order History
                 </h1>
                 <p className="text-white/70 text-sm mt-2" style={{ fontWeight: 300 }}>
-                  {isUserLoggedIn() ? "Track and manage all your orders" : `Orders for ${userEmail}`}
+                  {isUserLoggedIn() ? "Track and manage all your orders" : `Orders for ${userPhone ? userPhone : "your phone number"}`}
                 </p>
               </div>
 
@@ -400,7 +400,7 @@ const OrderHistoryPage = () => {
                         </div>
                         <div>
                           <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1" style={{ fontFamily: "'Playfair Display', serif" }}>
-                            Order #{getOrderNumber(order._id)}
+                            {getOrderName(order)}
                           </h3>
                           <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400">
                             <span className="flex items-center gap-1">
@@ -457,7 +457,7 @@ const OrderHistoryPage = () => {
                   </div>
 
                   {/* ── ITEM IMAGE STRIP ── */}
-                  <div className="px-5 sm:px-6 py-4 border-b border-gray-100 flex gap-2.5 overflow-x-auto">
+                  <div className="px-5 sm:px-6 py-4 border-b border-gray-100 flex items-center gap-2.5">
                     {order.items.slice(0, 4).map((item, idx) => (
                       <div key={idx} className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 border-gray-100">
                         <img
@@ -467,7 +467,17 @@ const OrderHistoryPage = () => {
                           onError={e => { e.target.src = "https://images.unsplash.com/photo-1602874801006-47c1c969a405?w=200&h=200&fit=crop"; }}
                         />
                       </div>
+                      
                     ))}
+                    {/* After the images map, add this */}
+<div className="flex flex-col justify-center ml-2">
+  <p className="text-sm font-semibold text-gray-800 line-clamp-1" style={{ fontFamily: "'Playfair Display', serif" }}>
+    {order.items.map(i => i.name).join(", ")}
+  </p>
+  <p className="text-xs text-gray-400 mt-1">
+    {order.items.reduce((sum, i) => sum + i.quantity, 0)} item{order.items.reduce((sum, i) => sum + i.quantity, 0) !== 1 ? "s" : ""} · {order.paymentMethod === "cod" ? "Cash on Delivery" : "Online Payment"}
+  </p>
+</div>
                     {order.items.length > 4 && (
                       <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-gradient-to-br from-purple-100 to-pink-100 border-2 border-purple-200 flex items-center justify-center">
                         <p className="text-purple-600 font-bold text-sm">+{order.items.length - 4}</p>

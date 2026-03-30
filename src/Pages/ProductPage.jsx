@@ -17,7 +17,16 @@ const ProductPage = () => {
   const [categories, setCategories] = useState([]);
 
   const [currentPage, setCurrentPage] = useState(1);
-const PRODUCTS_PER_PAGE = 10;
+
+  const [quickViewProduct, setQuickViewProduct] = useState(null);
+
+const [toast, setToast] = useState(null);
+
+const showToast = (message, type = 'success') => {
+  setToast({ message, type });
+  setTimeout(() => setToast(null), 3000);
+};
+  const PRODUCTS_PER_PAGE = 10;
 
   const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -79,9 +88,29 @@ useEffect(() => {
           categoryMap.set(p.category, { id: p.category, name: p.categoryName });
         }
       });
-      const uniqueCategories = Array.from(categoryMap.values());
-      setCategories(uniqueCategories);
+     const uniqueCategories = Array.from(categoryMap.values());
 
+// ADD THIS BLOCK RIGHT HERE:
+const categoryOrder = [
+  '1 Wick',
+  '2 Wick', 
+  '3 Wick',
+  'Limited Premium Edition',
+  'Pack of 3 Candles',
+  'Wax Sachets',
+  'Bath Salts'
+  
+];
+
+const sortedCategories = uniqueCategories.sort((a, b) => {
+  const aIndex = categoryOrder.indexOf(a.name);
+  const bIndex = categoryOrder.indexOf(b.name);
+  if (aIndex === -1) return 1;
+  if (bIndex === -1) return -1;
+  return aIndex - bIndex;
+});
+
+setCategories(sortedCategories); // CHANGE uniqueCategories to sortedCategories
     } catch (err) {
       setError(err.message);
       console.error('Error fetching products:', err);
@@ -143,14 +172,13 @@ const paginatedProducts = filteredProducts.slice(
   currentPage * PRODUCTS_PER_PAGE
 );
 
-  const maxDiscount = products.reduce((max, p) => Math.max(max, p.discount || 0), 0);
-  const topRating = products.reduce((max, p) => Math.max(max, p.rating || 0), 0);
+  // const maxDiscount = products.reduce((max, p) => Math.max(max, p.discount || 0), 0);
+  // const topRating = products.reduce((max, p) => Math.max(max, p.rating || 0), 0);
 
-  const getSelectedCategoryName = () => {
-    if (selectedCategory === 'all') return 'Discover Your Perfect Scent';
-    const category = categories.find(cat => cat.id === selectedCategory);
-    return category?.name || 'Products';
-  };
+const getSelectedCategoryName = () => {
+  if (selectedCategory === 'all') return 'Discover Your Perfect Scent';
+  return selectedCategory;
+};
 
   // Cart Helper Functions
   const isUserLoggedIn = () => {
@@ -198,11 +226,11 @@ const paginatedProducts = filteredProducts.slice(
         addToLocalCart(cartItem);
         console.log('Added to cart (localStorage)');
       }
-      alert('Product added to cart successfully!');
+      showToast('Added to cart! 🛒');
       window.dispatchEvent(new Event('cartUpdated'));
     } catch (error) {
       console.error('Error adding to cart:', error);
-      alert('Failed to add product to cart. Please try again.');
+      showToast('Failed to add product to cart. Please try again.', 'error');
     }
   };
 
@@ -244,11 +272,11 @@ const paginatedProducts = filteredProducts.slice(
         addToLocalWishlist(wishlistItem);
         console.log('Added to wishlist (localStorage)');
       }
-      alert('Product added to wishlist!');
+      showToast('Product added to wishlist! 🖤');
       window.dispatchEvent(new Event('wishlistUpdated'));
     } catch (error) {
       console.error('Error adding to wishlist:', error);
-      alert('Failed to add to wishlist. Please try again.');
+      showToast('Failed to add to wishlist. Please try again.', 'error');
     }
   };
 
@@ -393,25 +421,19 @@ const paginatedProducts = filteredProducts.slice(
         </div>
       </div>
 
-      {/* ── STATS BAR ── */}
-      <div className="bg-white border-b border-gray-100 shadow-sm">
-        <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 grid grid-cols-3  divide-x divide-gray-100">
-          {[
-            { value: `${products.length}+`, label: 'Products' },
-            { value: `${maxDiscount}%`, label: 'Max Discount' },
-            { value: `${topRating}★`, label: 'Top Rated' },
-            
-          ].map((stat, i) => (
-            <div key={i} className="py-3 px-3 text-center">
-              <div className="text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent" style={{ fontFamily: "'Playfair Display', serif" }}>
-                {stat.value}
-              </div>
-              <p className="text-gray-400 text-[10px] font-medium uppercase tracking-wider">{stat.label}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
+      <div className="bg-white border-b border-gray-100 px-4 sm:px-6 lg:px-8 py-2.5">
+  <div className="max-w-6xl mx-auto flex items-center gap-2 text-xs text-gray-400">
+    <a href="/" className="hover:text-purple-600 transition-colors">Home</a>
+    <span>/</span>
+    <a href="/products" className="hover:text-purple-600 transition-colors">Products</a>
+    {selectedCategory !== 'all' && (
+      <>
+        <span>/</span>
+        <span className="text-purple-600 font-semibold">{selectedCategory}</span>
+      </>
+    )}
+  </div>
+</div>
       {/* ── STICKY CATEGORY TABS + SORT/FILTER ── */}
       <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-gray-100 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-3">
@@ -626,15 +648,23 @@ const paginatedProducts = filteredProducts.slice(
 
                 {/* Quick Add bar (slides up on hover, desktop) */}
                 {product.inStock && (
-                  <div className="quick-add absolute bottom-0 left-0 right-0 hidden sm:block">
-                    <button
-                      onClick={(e) => handleAddToCart(product, e)}
-                      className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs uppercase tracking-widest py-2.5 font-semibold flex items-center justify-center gap-1.5 hover:from-purple-700 hover:to-pink-700 transition-all"
-                    >
-                      <ShoppingCart className="w-3 h-3" /> Add to Cart
-                    </button>
-                  </div>
-                )}
+  <div className="quick-add absolute bottom-0 left-0 right-0 hidden sm:block">
+    <div className="flex gap-1">
+      <button
+        onClick={(e) => handleAddToCart(product, e)}
+        className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs uppercase tracking-widest py-2.5 font-semibold flex items-center justify-center gap-1.5 hover:from-purple-700 hover:to-pink-700 transition-all"
+      >
+        <ShoppingCart className="w-3 h-3" /> Add to Cart
+      </button>
+      <button
+        onClick={(e) => { e.stopPropagation(); setQuickViewProduct(product); }}
+        className="bg-white text-gray-900 px-3 py-2.5 text-xs font-semibold hover:bg-gray-100 transition-colors"
+      >
+        👁
+      </button>
+    </div>
+  </div>
+)}
               </div>
 
               {/* ── PRODUCT INFO ── */}
@@ -675,19 +705,27 @@ const paginatedProducts = filteredProducts.slice(
                   )}
                 </div>
 
-                {/* Add to cart — always visible on mobile */}
-                <button
-                  disabled={!product.inStock}
-                  onClick={(e) => handleAddToCart(product, e)}
-                  className={`sm:hidden w-full py-2.5 rounded-xl text-xs uppercase tracking-wider font-semibold flex items-center justify-center gap-2 transition-all ${
-                    product.inStock
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 shadow-md'
-                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  }`}
-                >
-                  <ShoppingCart className="w-3.5 h-3.5" />
-                  {product.inStock ? 'Add to Cart' : 'Out of Stock'}
-                </button>
+                {/* Add to cart + Quick View — always visible on mobile */}
+<div className="sm:hidden flex gap-2">
+  <button
+    disabled={!product.inStock}
+    onClick={(e) => handleAddToCart(product, e)}
+    className={`flex-1 py-2.5 rounded-xl text-xs uppercase tracking-wider font-semibold flex items-center justify-center gap-2 transition-all ${
+      product.inStock
+        ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 shadow-md'
+        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+    }`}
+  >
+    <ShoppingCart className="w-3.5 h-3.5" />
+    {product.inStock ? 'Add' : 'Out of Stock'}
+  </button>
+  <button
+    onClick={(e) => { e.stopPropagation(); setQuickViewProduct(product); }}
+    className="px-3 py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 hover:border-purple-500 hover:text-purple-600 transition-all text-xs font-semibold"
+  >
+    👁
+  </button>
+</div>
               </div>
             </div>
           ))}
@@ -741,7 +779,84 @@ const paginatedProducts = filteredProducts.slice(
     </button>
   </div>
 )}
+{/* Quick View Modal */}
+{quickViewProduct && (
+  <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setQuickViewProduct(null)}>
+    <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+      
+      {/* Close button */}
+      <div className="flex justify-end p-4">
+        <button onClick={() => setQuickViewProduct(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+          <X className="w-5 h-5 text-gray-500" />
+        </button>
       </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 px-6 pb-8">
+        {/* Image */}
+        <div className="aspect-square rounded-xl overflow-hidden bg-gray-50">
+          <img
+            src={quickViewProduct.image}
+            alt={quickViewProduct.name}
+            className="w-full h-full object-contain"
+          />
+        </div>
+
+        {/* Details */}
+        <div className="flex flex-col justify-between">
+          <div>
+            <p className="text-xs text-purple-500 uppercase tracking-wider font-semibold mb-1">
+              {quickViewProduct.categoryName}
+            </p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3" style={{ fontFamily: "'Playfair Display', serif" }}>
+              {quickViewProduct.name}
+            </h2>
+            <p className="text-sm text-gray-500 mb-4 leading-relaxed">
+              {quickViewProduct.description}
+            </p>
+
+            {/* Rating */}
+            <div className="flex items-center gap-2 mb-4">
+              <div className="flex gap-0.5">
+                {[1,2,3,4,5].map(s => (
+                  <Star key={s} className={`w-4 h-4 ${s <= Math.round(quickViewProduct.rating) ? 'fill-yellow-400 text-yellow-400' : 'fill-gray-200 text-gray-200'}`} />
+                ))}
+              </div>
+              <span className="text-sm text-gray-500">{quickViewProduct.rating}</span>
+            </div>
+
+            <p className="text-3xl font-bold text-gray-900 mb-6" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+              ₹{quickViewProduct.price}
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={(e) => { handleAddToCart(quickViewProduct, e); setQuickViewProduct(null); }}
+              className="w-full py-3.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl flex items-center justify-center gap-2 hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg"
+            >
+              <ShoppingCart className="w-4 h-4" /> Add to Cart
+            </button>
+            <button
+              onClick={() => { window.location.href = `/product/${quickViewProduct.id}`; }}
+              className="w-full py-3 border-2 border-gray-200 text-gray-700 font-semibold rounded-xl hover:border-purple-500 hover:text-purple-600 transition-all text-sm"
+            >
+              View Full Details →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+      </div>
+      {/* Toast Notification */}
+{toast && (
+  <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-2xl text-white text-sm font-semibold transition-all ${
+    toast.type === 'success' ? 'bg-gradient-to-r from-purple-600 to-pink-600' : 'bg-red-500'
+  }`}>
+    {toast.type === 'success' ? '✓' : '✕'} {toast.message}
+  </div>
+)}
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Heart, ShoppingCart, Star, Minus, Plus, Truck, Shield, RotateCcw, Sparkles, ChevronRight, AlertCircle, Loader2, ChevronDown, ChevronUp, Leaf, Award, Package } from 'lucide-react';
+import { Heart, ShoppingCart, Star, Minus, Plus, Truck, Shield, RotateCcw, Sparkles, ChevronRight, AlertCircle, Loader2, ChevronDown, ChevronUp, Leaf, Award, Package, Share2 } from 'lucide-react';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -17,6 +17,11 @@ const ProductDetail = () => {
   const [openAccordion, setOpenAccordion] = useState('description');
 
   const API_BASE_URL = import.meta.env.VITE_API_URL;
+  const [toast, setToast] = useState(null);
+const showToast = (message, type = 'success') => {
+  setToast({ message, type });
+  setTimeout(() => setToast(null), 3000);
+};
 
   const getOptimizedImageUrl = (url) => {
   if (!url || !url.includes('cloudinary.com')) return url;
@@ -110,17 +115,17 @@ const ProductDetail = () => {
       if (isUserLoggedIn()) {
         await addToCartAPI(product._id, quantity);
         console.log('Added to cart (API)');
-        alert('Product added to cart successfully!');
+        showToast('Product added to cart successfully!');
         window.dispatchEvent(new Event('cartUpdated'));
       } else {
         addToLocalCart(cartItem);
         console.log('Added to cart (localStorage)');
-        alert('Product added to cart successfully!');
+        showToast('Product added to cart successfully!');
         window.dispatchEvent(new Event('cartUpdated'));
       }
     } catch (error) {
       console.error('Error adding to cart:', error);
-      alert('Failed to add product to cart. Please try again.');
+      showToast('Failed to add product to cart. Please try again.', 'error');
     } finally {
       setAddingToCart(false);
     }
@@ -144,10 +149,11 @@ const ProductDetail = () => {
         addToLocalCart(cartItem);
         window.dispatchEvent(new Event('cartUpdated'));
       }
-      navigate('/checkout');
+      await new Promise(resolve => setTimeout(resolve, 100));
+navigate('/checkout');
     } catch (error) {
       console.error('Error in buy now:', error);
-      alert('Failed to process request. Please try again.');
+      showToast('Failed to process request. Please try again.', 'error');
     } finally {
       setAddingToCart(false);
     }
@@ -181,7 +187,7 @@ const ProductDetail = () => {
   }, [id]);
 
   useEffect(() => {
-    const fetchRelatedProducts = async (categoryId) => {
+    const fetchRelatedProducts = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/products?category=${product.category.name}&limit=100`);
 const data = await response.json();
@@ -260,11 +266,11 @@ const related = data.data
         console.log('Added to wishlist (localStorage)');
       }
       setWishlistAdded(true);
-      alert('Product added to wishlist!');
+      showToast('Product added to wishlist!');
       window.dispatchEvent(new Event('wishlistUpdated'));
     } catch (error) {
       console.error('Error adding to wishlist:', error);
-      alert('Failed to add to wishlist. Please try again.');
+      showToast('Failed to add to wishlist. Please try again.', 'error');
     }
   };
 
@@ -408,6 +414,13 @@ className="w-full h-full object-contain p-1"
                 <Heart className={`w-5 h-5 ${wishlistAdded ? 'fill-red-500' : ''}`} />
               </button>
 
+              <button
+  onClick={() => navigator.share({ title: product.name, url: window.location.href })}
+  className="absolute top-4 left-4 w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center text-gray-400 hover:text-purple-600 transition-all"
+>
+  <Share2 className="w-5 h-5" />
+</button>
+
               {/* Image counter on mobile */}
               {productImages.length > 1 && (
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white text-xs px-3 py-1 rounded-full sm:hidden">
@@ -439,9 +452,10 @@ className="w-full h-full object-contain p-1"
             <div className="flex items-center gap-2 mb-5">
               <div className="flex items-center gap-1 bg-gradient-to-r from-yellow-400 to-orange-400 px-3 py-1 rounded-full">
                 <Star className="w-3.5 h-3.5 fill-white text-white" />
-                <span className="text-white text-xs font-bold">4.5</span>
+                <span className="text-white text-xs font-bold">{product.rating || 4.5}</span>
+
               </div>
-              <span className="text-sm text-gray-500">(324 Reviews)</span>
+              <span className="text-sm text-gray-500">New Arrival</span>
             </div>
 
             {/* Price */}
@@ -508,7 +522,7 @@ className="w-full h-full object-contain p-1"
             {/* Trust Badges */}
             <div className="grid grid-cols-3 gap-3 py-6 border-t border-purple-100">
               {[
-                { icon: <Truck className="w-5 h-5" />, label: 'Free Delivery' },
+                { icon: <Truck className="w-5 h-5" />, label: product.price >= 999 ? 'Free Delivery' : 'Delivery ₹90+' },
                 { icon: <RotateCcw className="w-5 h-5" />, label: 'Easy Returns' },
                 { icon: <Shield className="w-5 h-5" />, label: 'Secure Pay' },
               ].map((item, i) => (
@@ -685,7 +699,7 @@ className="w-full h-full object-contain p-1"
               {relatedProducts.map((item) => (
                 <div
                   key={item.id}
-                  onClick={() => window.location.href = `/product/${item.id}`}
+                  onClick={() => { window.scrollTo(0, 0); navigate(`/product/${item.id}`); }}
                   className="related-card cursor-pointer bg-white rounded-2xl overflow-hidden shadow-md"
                 >
                   <div className="overflow-hidden bg-gray-50" style={{ aspectRatio: '1/1'}}>
@@ -712,7 +726,15 @@ className="w-full h-full object-contain p-2"
           </div>
         )}
 
+      
       </div>
+    {toast && (
+        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-2xl text-white text-sm font-semibold ${
+          toast.type === 'success' ? 'bg-gradient-to-r from-purple-600 to-pink-600' : 'bg-red-500'
+        }`}>
+          {toast.type === 'success' ? '✓' : '✕'} {toast.message}
+        </div>
+      )}
     </div>
   );
 };

@@ -230,8 +230,7 @@ useEffect(() => {
       {/* ══════════════════════════════════════
           HERO CAROUSEL
       ══════════════════════════════════════ */}
-      <section className="relative w-full h-screen min-h-[600px] overflow-hidden">
-
+<section className="relative w-full h-[60vw] min-h-[500px] sm:h-screen overflow-hidden">
         {slides.map((slide, index) => (
           <div
             key={index}
@@ -239,7 +238,7 @@ useEffect(() => {
           >
             {/* Background image */}
             <div
-              className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105"
+              className="absolute inset-0 bg-cover bg-no-repeat scale-105 bg-top sm:bg-center"
               style={{ backgroundImage: `url(${slide.image})` }}
             />
             {/* Multi-layer overlay for text legibility */}

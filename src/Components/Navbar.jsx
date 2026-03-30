@@ -219,8 +219,8 @@ const Navbar = () => {
                   <span className={underline}></span>
                 </button>
                 {candleDropdown && (
-                  <div className="absolute top-full left-0 mt-[18px] w-44 bg-white rounded-xl shadow-xl border border-gray-100 py-2 animate-slideDown">
-                    {[['100ML', '100ml'], ['200ML', '200ml'], ['350ML', '350ml'],['120ML', '120ml']].map(([label, slug]) => (
+                  <div className="absolute top-full left-0 pt-[18px] w-44 bg-white rounded-xl shadow-xl border border-gray-100 py-2 animate-slideDown">
+                    {[['Limited Premium Edition', 'LIMITED PREMIUM EDITION'], ['2 Wick', '2 Wick'], ['3 Wick', '3 Wick'],['1 Wick', '1 Wick']].map(([label, slug]) => (
                       <a key={slug} href={`/products?category=${slug}`} className="block px-4 py-2.5 text-sm text-gray-600 hover:bg-purple-50 hover:text-purple-700 transition-colors rounded-lg mx-1">
                         {label}
                       </a>
@@ -241,7 +241,7 @@ const Navbar = () => {
                   <span className={underline}></span>
                 </button>
                 {bathDropdown && (
-                  <div className="absolute top-full left-0 mt-[18px] w-44 bg-white rounded-xl shadow-xl border border-gray-100 py-2 animate-slideDown">
+                  <div className="absolute top-full left-0 pt-[18px] w-44 bg-white rounded-xl shadow-xl border border-gray-100 py-2 animate-slideDown">
                     {[['Bath Salts', 'Bath Salts'], 
                     // ['Bath Bomb', 'bath-bomb']
                   ].map(([label, slug]) => (
@@ -363,7 +363,7 @@ const Navbar = () => {
               isOpen={mobileCandleOpen}
               onToggle={() => setMobileCandleOpen(!mobileCandleOpen)}
             >
-              {[['100ML', '100ml'], ['200ML', '200ml'], ['350ML', '350ml'],['120ML', '120ml']].map(([label, slug]) => (
+              {[['Limited Premium Edition', 'LIMITED PREMIUM EDITION'], ['2 Wick', '2 Wick'], ['3 Wick', '3 Wick'],['1 Wick', '1 Wick']].map(([label, slug]) => (
                 <a key={slug} href={`/products?category=${slug}`} className="block px-4 py-2.5 text-sm text-gray-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-all" onClick={() => setMobileMenuOpen(false)}>
                   {label}
                 </a>
@@ -431,7 +431,7 @@ const Navbar = () => {
 
             {/* Wishlist */}
             <a
-              href="#wishlist"
+              href="/wishlist"
               className="flex items-center gap-3 px-4 py-3 text-gray-700 font-medium text-sm rounded-xl hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 transition-all duration-200"
               onClick={() => setMobileMenuOpen(false)}
             >

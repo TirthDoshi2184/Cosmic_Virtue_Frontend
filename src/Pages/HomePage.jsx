@@ -7,21 +7,21 @@ const HomePage = () => {
 
   const slides = [
     {
-      image: "https://res.cloudinary.com/ddpvtobbh/image/upload/v1772473727/IMG_6703_cxyocn.jpg",
+      image: "https://res.cloudinary.com/ddpvtobbh/image/upload/v1774888340/Gemini_Generated_Image_3lv99q3lv99q3lv9_hcouxh.png",
       title: "COSMIC VIRTUE",
       subtitle: "BATH SALTS COLLECTION",
       description: "HANDCRAFTED BATH SALTS IN THREE NATURAL FLAVOURS",
       features: ["Lavender", "Orange", "Rosemary", "Pure Natural Ingredients"]
     },
     {
-      image: "https://res.cloudinary.com/ddpvtobbh/image/upload/v1772473532/IMG_6705_k9zzt2.jpg",
+      image: "https://res.cloudinary.com/ddpvtobbh/image/upload/v1774887581/Gemini_Generated_Image_8x3blm8x3blm8x3b_cdch8y.png",
       title: "WAX DELIGHTS",
       subtitle: "BOTANICAL WAX COLLECTION",
       description: "HANDMADE WAX SACHETS & PEARL WAX CREATIONS",
       features: ["Floral Wax Sachets", "Pearl Wax Melts", "Botanical Embeds", "Artisan Crafted"]
     },
     {
-      image: "https://res.cloudinary.com/ddpvtobbh/image/upload/v1772473531/IMG_6688_hcqmdi.jpg",
+      image: "https://res.cloudinary.com/ddpvtobbh/image/upload/v1774888338/Gemini_Generated_Image_s2rax5s2rax5s2ra_so5pir.png",
       title: "SACRED LIGHT",
       subtitle: "CANDLE COLLECTION",
       description: "PILLAR, JAR & 7 CHAKRA CANDLES FOR EVERY SPACE",

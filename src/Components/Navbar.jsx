@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Heart, ShoppingCart, User, ChevronDown, Menu, X } from 'lucide-react';
+import { Search, Heart, ShoppingCart, User, ChevronDown, Menu, X, LogOut, ShoppingBag, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import CartSidebar from '../Pages/CartPage';
 
@@ -14,6 +14,7 @@ const Navbar = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const navigate = useNavigate();
   const [cartCount, setCartCount] = useState(0);
+  const [profileDropdown, setProfileDropdown] = useState(false);
 
   const isUserLoggedIn = () => {
     const token = localStorage.getItem('token');
@@ -99,6 +100,25 @@ const Navbar = () => {
   const desktopLink = "text-gray-700 font-medium text-sm tracking-wide relative group py-2 transition-colors hover:text-purple-600 flex items-center gap-1";
   const underline = "absolute -bottom-[18px] left-0 w-full h-0.5 bg-gradient-to-r from-purple-600 to-pink-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left";
 
+
+const getUserEmail = () => {
+  try {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    return user.email || '';
+  } catch { return ''; }
+};
+
+const getUserInitial = () => {
+  const email = getUserEmail();
+  return email ? email[0].toUpperCase() : 'U';
+};
+
+const handleLogout = () => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  localStorage.removeItem('userId');
+  navigate('/login');
+};
   return (
     <>
       <style>{`
@@ -183,14 +203,60 @@ const Navbar = () => {
                     </span>
                   )}
                 </button>
+{/* Profile — desktop */}
+<div className="relative hidden md:block" 
+  onMouseEnter={() => setProfileDropdown(true)} 
+  onMouseLeave={() => setProfileDropdown(false)}>
+  <button className="flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:text-purple-600 hover:bg-purple-50 transition-all duration-200">
+    {isUserLoggedIn() ? (
+      <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold"
+        style={{ background: "linear-gradient(135deg, #7c3aed, #db2777)" }}>
+        {getUserInitial()}
+      </div>
+    ) : (
+      <User className="w-5 h-5" />
+    )}
+  </button>
 
-                {/* Profile — desktop */}
-                <button
-                  onClick={() => navigate('/login')}
-                  className="hidden md:flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:text-purple-600 hover:bg-purple-50 transition-all duration-200"
-                >
-                  <User className="w-5 h-5" />
-                </button>
+  {profileDropdown && (
+    <div className="absolute top-full right-0 pt-[10px] w-48 animate-slideDown">
+      <div className="bg-white rounded-xl shadow-xl border border-gray-100 py-2 overflow-hidden">
+        {isUserLoggedIn() ? (
+          <>
+            {/* User email hint */}
+            <div className="px-4 py-2 border-b border-gray-50 mb-1">
+              <p className="text-[11px] text-gray-400 truncate">{getUserEmail()}</p>
+            </div>
+            <a href="/profile"
+              className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-600 hover:bg-purple-50 hover:text-purple-700 transition-colors rounded-lg mx-1">
+              <User className="w-4 h-4" /> My Profile
+            </a>
+            <a href="/order-success"
+              className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-600 hover:bg-purple-50 hover:text-purple-700 transition-colors rounded-lg mx-1">
+              <ShoppingBag className="w-4 h-4" /> My Orders
+            </a>
+            <div className="border-t border-gray-100 my-1 mx-2" />
+            <button onClick={handleLogout}
+              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors rounded-lg mx-1" style={{ width: "calc(100% - 8px)" }}>
+              <LogOut className="w-4 h-4" /> Logout
+            </button>
+          </>
+        ) : (
+          <>
+            <a href="/login"
+              className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-600 hover:bg-purple-50 hover:text-purple-700 transition-colors rounded-lg mx-1">
+              <User className="w-4 h-4" /> Login
+            </a>
+            <a href="/register"
+              className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-600 hover:bg-purple-50 hover:text-purple-700 transition-colors rounded-lg mx-1">
+              <Sparkles className="w-4 h-4" /> Register
+            </a>
+          </>
+        )}
+      </div>
+    </div>
+  )}
+</div>
               </div>
             </div>
           </div>
@@ -439,16 +505,23 @@ const Navbar = () => {
               <span>Wishlist</span>
             </a>
 
-            {/* Profile */}
-            <a
-              href="/login"
-              className="flex items-center gap-3 px-4 py-3 text-gray-700 font-medium text-sm rounded-xl hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 transition-all duration-200"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <User className="w-4.5 h-4.5" />
-              <span>Profile</span>
-            </a>
-
+            {isUserLoggedIn() ? (
+  <>
+    <a href="/profile" className="flex items-center gap-3 px-4 py-3 text-gray-700 font-medium text-sm rounded-xl hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 transition-all" onClick={() => setMobileMenuOpen(false)}>
+      <User className="w-4 h-4" /> My Profile
+    </a>
+    <a href="/order-success" className="flex items-center gap-3 px-4 py-3 text-gray-700 font-medium text-sm rounded-xl hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 transition-all" onClick={() => setMobileMenuOpen(false)}>
+      <ShoppingBag className="w-4 h-4" /> My Orders
+    </a>
+    <button onClick={() => { handleLogout(); setMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-red-500 font-medium text-sm rounded-xl hover:bg-red-50 transition-all">
+      <LogOut className="w-4 h-4" /> Logout
+    </button>
+  </>
+) : (
+  <a href="/login" className="flex items-center gap-3 px-4 py-3 text-gray-700 font-medium text-sm rounded-xl hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 transition-all" onClick={() => setMobileMenuOpen(false)}>
+    <User className="w-4 h-4" /> Login / Register
+  </a>
+)}
           </div>
         </div>
       </div>

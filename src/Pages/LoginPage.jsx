@@ -56,7 +56,7 @@ const Login = () => {
       if (response.ok) {
   // Store BOTH token and user
   localStorage.setItem('token', data.token);  // ← Change 'authToken' to 'token'
-  localStorage.setItem('userId', data.userId);
+  localStorage.setItem('userId', data.user._id);
   localStorage.setItem('user', JSON.stringify(data.user)); // ← Add this
   
   // ===== ADD GUEST CART MIGRATION =====

@@ -38,7 +38,7 @@ const OrderHistoryPage = () => {
   // ============================================
   // UTILITY FUNCTIONS
   // ============================================
-  const isUserLoggedIn = () => !!localStorage.getItem("userToken");
+  const isUserLoggedIn = () => !!localStorage.getItem("token");
 
   const getUserId = () => {
     try {
@@ -47,7 +47,7 @@ const OrderHistoryPage = () => {
     } catch { return null; }
   };
 
-  const getUserToken = () => localStorage.getItem("userToken");
+  const getUserToken = () => localStorage.getItem("token");
   const getSavedPhone = () => localStorage.getItem("userPhone");
 
   // ============================================
@@ -254,11 +254,11 @@ const OrderHistoryPage = () => {
             </button>
             {!isUserLoggedIn() && (
               <button
-                onClick={() => { localStorage.removeItem("userEmail"); setEmailVerified(false); setShowEmailInput(true); }}
+                onClick={() => { localStorage.removeItem("userPhone"); setPhoneVerified(false); setShowPhoneInput(true); }}
                 className="w-full py-3.5 border-2 border-gray-200 text-gray-600 font-semibold text-sm rounded-xl hover:border-purple-400 hover:text-purple-600 transition-all"
                 style={{ fontFamily: "'Montserrat', sans-serif" }}
               >
-                Use Different Email
+                Use Different Phone
               </button>
             )}
           </div>
@@ -341,10 +341,10 @@ const OrderHistoryPage = () => {
                 </button>
                 {!isUserLoggedIn() && (
                   <button
-                    onClick={() => { localStorage.removeItem("userEmail"); setEmailVerified(false); setShowEmailInput(true); setOrders([]); }}
+                    onClick={() => { localStorage.removeItem("userPhone"); setPhoneVerified(false); setShowPhoneInput(true); setOrders([]); }}
                     className="flex items-center gap-2 bg-white/10 border border-white/20 text-white/80 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-white/20 transition-all"
                   >
-                    Change Email
+                    Change Phone
                   </button>
                 )}
               </div>

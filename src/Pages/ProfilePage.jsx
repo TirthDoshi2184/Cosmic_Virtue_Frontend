@@ -31,7 +31,6 @@ export default function ProfilePage() {
 
   useEffect(() => {
     fetchProfile();
-    // Auto-dismiss welcome banner after 4s
     const t = setTimeout(() => setShowWelcome(false), 4000);
     return () => clearTimeout(t);
   }, []);
@@ -232,6 +231,7 @@ export default function ProfilePage() {
           font-size: 14px;
           color: #1f1135;
           transition: border-color 0.2s, box-shadow 0.2s;
+          box-sizing: border-box;
         }
         .cv-input:focus {
           outline: none;
@@ -243,13 +243,14 @@ export default function ProfilePage() {
 
         .cv-btn-primary {
           display: flex; align-items: center; justify-content: center; gap: 8px;
-          padding: 12px 24px; border-radius: 14px; border: none; cursor: pointer;
+          padding: 12px 16px; border-radius: 14px; border: none; cursor: pointer;
           font-family: 'DM Sans', sans-serif;
-          font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+          font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
           background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%);
           color: #fff;
           box-shadow: 0 4px 16px rgba(124,58,237,0.28);
           transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+          min-width: 0;
         }
         .cv-btn-primary:hover:not(:disabled) {
           opacity: 0.92; transform: translateY(-1px);
@@ -259,28 +260,143 @@ export default function ProfilePage() {
 
         .cv-btn-ghost {
           display: flex; align-items: center; justify-content: center; gap: 8px;
-          padding: 12px 24px; border-radius: 14px;
+          padding: 12px 16px; border-radius: 14px;
           background: transparent;
           border: 1.5px solid #e9d5ff;
           font-family: 'DM Sans', sans-serif;
-          font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+          font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
           color: #9ca3af; cursor: pointer;
           transition: border-color 0.2s, color 0.2s, background 0.2s;
+          min-width: 0;
         }
         .cv-btn-ghost:hover:not(:disabled) { border-color: #c4b5fd; color: #7c3aed; background: #faf5ff; }
 
-        .avatar-glow {
-          box-shadow: 0 0 0 4px #fff, 0 0 0 6px rgba(124,58,237,0.2), 0 8px 24px rgba(124,58,237,0.3);
+        .stat-pill {
+          display: inline-flex; align-items: center; gap: 4px;
+          padding: 3px 10px; border-radius: 100px;
+          font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
         }
 
-        .stat-pill {
-          display: inline-flex; align-items: center; gap: 6px;
-          padding: 4px 14px; border-radius: 100px;
-          font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+        /* ── Hero header stacks on mobile ── */
+        .hero-header {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          padding: 20px;
+        }
+        .hero-left {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          min-width: 0;
+        }
+        .hero-right {
+          display: flex;
+          flex-direction: row;
+          gap: 8px;
+          width: 100%;
+        }
+        .hero-right button {
+          flex: 1;
+        }
+
+        @media (min-width: 480px) {
+          .hero-header {
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            padding: 24px 28px;
+          }
+          .hero-right {
+            flex-direction: column;
+            width: auto;
+          }
+          .hero-right button {
+            flex: none;
+          }
+        }
+
+        /* Avatar size responsive */
+        .hero-avatar {
+          width: 52px;
+          height: 52px;
+          border-radius: 16px;
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(255,255,255,0.15);
+          border: 2px solid rgba(255,255,255,0.3);
+          backdrop-filter: blur(8px);
+        }
+        @media (min-width: 480px) {
+          .hero-avatar { width: 64px; height: 64px; }
+        }
+
+        .hero-name {
+          font-size: 20px;
+          font-weight: 600;
+          letter-spacing: -0.01em;
+          line-height: 1.1;
+          color: #fff;
+        }
+        @media (min-width: 480px) {
+          .hero-name { font-size: 26px; }
+        }
+
+        .hero-email {
+          font-size: 12px;
+          color: rgba(255,255,255,0.65);
+          margin-top: 2px;
+          word-break: break-all;
+        }
+
+        /* Welcome banner text responsive */
+        .welcome-title {
+          font-size: 18px;
+        }
+        @media (min-width: 400px) {
+          .welcome-title { font-size: 22px; }
+        }
+
+        /* Info grid: single col on very small, 2-col on sm+ */
+        .info-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 12px;
+        }
+        @media (min-width: 480px) {
+          .info-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        /* Account ID ellipsis */
+        .account-id-text {
+          font-size: 11px;
+          color: #c4b5fd;
+          font-family: monospace;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          min-width: 0;
+        }
+
+        /* CTA button full-width on mobile */
+        .cta-wrap {
+          display: flex;
+          justify-content: center;
+          padding-top: 8px;
+          padding-bottom: 16px;
+        }
+        .cta-btn {
+          width: 100%;
+          max-width: 340px;
+        }
+        @media (min-width: 480px) {
+          .cta-btn { width: auto; }
         }
       `}</style>
 
-      <div className="cv-page min-h-screen px-4 py-10 sm:py-14"
+      <div className="cv-page min-h-screen px-3 py-8 sm:px-4 sm:py-14"
         style={{ background: "linear-gradient(135deg, #fdf4ff 0%, #faf5ff 50%, #fce7f3 100%)", backgroundAttachment: "fixed", position: "relative", overflow: "hidden" }}>
 
         {/* Background orbs */}
@@ -290,7 +406,7 @@ export default function ProfilePage() {
         {/* Toast */}
         {toast && (
           <div style={{ animation: "fadeSlideDown 0.35s ease-out both" }}
-            className={`fixed top-5 right-5 z-50 flex items-center gap-2.5 px-5 py-3.5 rounded-2xl text-sm font-semibold shadow-2xl border ${
+            className={`fixed top-4 left-3 right-3 sm:left-auto sm:right-5 sm:w-auto z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl text-sm font-semibold shadow-2xl border ${
               toast.type === "error"
                 ? "bg-white text-red-600 border-red-100 shadow-red-100"
                 : "bg-white text-purple-700 border-purple-100 shadow-purple-100"
@@ -306,23 +422,22 @@ export default function ProfilePage() {
 
           {/* ── Welcome Banner ── */}
           {showWelcome && (
-            <div className={`cv-card rounded-3xl px-6 py-5 shadow-lg overflow-hidden relative ${showWelcome ? 'welcome-enter' : 'welcome-exit'}`}
+            <div className={`cv-card rounded-3xl px-4 py-4 sm:px-6 sm:py-5 shadow-lg overflow-hidden relative ${showWelcome ? 'welcome-enter' : 'welcome-exit'}`}
               style={{ borderColor: "rgba(167,139,250,0.3)" }}>
-              {/* Decorative shimmer line */}
               <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg, #7c3aed, #db2777, #f59e0b, #7c3aed)", backgroundSize: "200%", animation: "shimmer 2s linear infinite" }} />
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="float-icon w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="float-icon w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
                     style={{ background: "linear-gradient(135deg, #ede9fe, #fce7f3)" }}>
-                    <Sparkles className="w-5 h-5" style={{ color: "#7c3aed" }} />
+                    <Sparkles className="w-4 h-4" style={{ color: "#7c3aed" }} />
                   </div>
-                  <div>
-                    <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontWeight: 600, color: "#1f1135", lineHeight: 1.2 }}>
+                  <div className="min-w-0">
+                    <p className="welcome-title cv-serif" style={{ fontWeight: 600, color: "#1f1135", lineHeight: 1.2 }}>
                       {welcomeMsg.greeting}{" "}
                       <span className="shimmer-text">{getUserName(user?.email)}</span>
                     </p>
-                    <p style={{ fontSize: 13, color: "#9ca3af", marginTop: 2 }}>{welcomeMsg.sub}</p>
+                    <p style={{ fontSize: 12, color: "#9ca3af", marginTop: 2 }}>{welcomeMsg.sub}</p>
                   </div>
                 </div>
                 <button onClick={() => setShowWelcome(false)}
@@ -335,71 +450,68 @@ export default function ProfilePage() {
           )}
 
           {/* ── Hero Card ── */}
-<div className="anim-1 cv-card rounded-3xl overflow-hidden shadow-xl" style={{ borderColor: "rgba(167,139,250,0.25)" }}>
-  
-  {/* Single unified header — no overlap */}
-  <div className="relative px-6 sm:px-8 py-6 flex items-center justify-between gap-4"
-    style={{ background: "linear-gradient(135deg, #6d28d9 0%, #9333ea 40%, #db2777 100%)" }}>
-    
-    {/* Decorative dots */}
-    <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(rgba(255,255,255,0.12) 1px, transparent 1px)", backgroundSize: "20px 20px", pointerEvents: "none" }} />
-    
-    {/* Left — avatar + name side by side */}
-    <div className="flex items-center gap-4 relative z-10">
-      <div className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0"
-        style={{ background: "rgba(255,255,255,0.15)", border: "2px solid rgba(255,255,255,0.3)", backdropFilter: "blur(8px)" }}>
-        <span className="cv-serif text-white" style={{ fontSize: 28, fontWeight: 600, lineHeight: 1 }}>
-          {user?.email ? user.email[0].toUpperCase() : "?"}
-        </span>
-      </div>
-      <div>
-        <h1 className="cv-serif text-white" style={{ fontSize: 26, fontWeight: 600, letterSpacing: "-0.01em", lineHeight: 1.1 }}>
-          {getUserName(user?.email)}
-        </h1>
-        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", marginTop: 3 }}>{user?.email}</p>
-        {/* Badges */}
-        <div className="flex items-center gap-2 mt-3 flex-wrap">
-          <span className="stat-pill" style={{ background: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.9)", border: "1px solid rgba(255,255,255,0.2)" }}>
-            <ShieldCheck className="w-3 h-3" /> Verified
-          </span>
-          <span className="stat-pill" style={{ background: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.9)", border: "1px solid rgba(255,255,255,0.2)" }}>
-            <Sparkles className="w-3 h-3" /> Member
-          </span>
-          {user?.createdAt && (
-            <span className="stat-pill" style={{ background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.15)", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>
-              Since {new Date(user.createdAt).getFullYear()}
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
+          <div className="anim-1 cv-card rounded-3xl overflow-hidden shadow-xl" style={{ borderColor: "rgba(167,139,250,0.25)" }}>
 
-    {/* Right — action buttons */}
-    {!editMode && !pwMode && (
-      <div className="flex flex-col items-end gap-2 relative z-10 flex-shrink-0">
-        <button onClick={() => setEditMode(true)} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold uppercase tracking-wide transition-all"
-          style={{ background: "rgba(255,255,255,0.18)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)", backdropFilter: "blur(8px)", fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.06em", cursor: "pointer" }}>
-          <Pencil className="w-3 h-3" /> Edit
-        </button>
-        <button onClick={handleLogout} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold uppercase tracking-wide transition-all"
-          style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.75)", border: "1px solid rgba(255,255,255,0.18)", backdropFilter: "blur(8px)", fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.06em", cursor: "pointer" }}>
-          <LogOut className="w-3 h-3" /> Logout
-        </button>
-      </div>
-    )}
-  </div>
+            <div className="hero-header relative"
+              style={{ background: "linear-gradient(135deg, #6d28d9 0%, #9333ea 40%, #db2777 100%)" }}>
 
-  {/* Bottom brand strip */}
-  <div className="px-6 py-2 flex justify-end" style={{ background: "#faf5ff", borderTop: "1px solid rgba(167,139,250,0.1)" }}>
-    <p style={{ fontSize: 10, color: "#c4b5fd", letterSpacing: "0.3em", textTransform: "uppercase", fontFamily: "'DM Sans', sans-serif" }}>Cosmic Virtue</p>
-  </div>
-</div>
+              {/* Decorative dots */}
+              <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(rgba(255,255,255,0.12) 1px, transparent 1px)", backgroundSize: "20px 20px", pointerEvents: "none" }} />
+
+              {/* Left — avatar + name */}
+              <div className="hero-left relative z-10">
+                <div className="hero-avatar">
+                  <span className="cv-serif text-white" style={{ fontSize: 24, fontWeight: 600, lineHeight: 1 }}>
+                    {user?.email ? user.email[0].toUpperCase() : "?"}
+                  </span>
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <h1 className="hero-name cv-serif">{getUserName(user?.email)}</h1>
+                  <p className="hero-email">{user?.email}</p>
+                  <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                    <span className="stat-pill" style={{ background: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.9)", border: "1px solid rgba(255,255,255,0.2)" }}>
+                      <ShieldCheck className="w-3 h-3" /> Verified
+                    </span>
+                    <span className="stat-pill" style={{ background: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.9)", border: "1px solid rgba(255,255,255,0.2)" }}>
+                      <Sparkles className="w-3 h-3" /> Member
+                    </span>
+                    {user?.createdAt && (
+                      <span className="stat-pill" style={{ background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.15)", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>
+                        Since {new Date(user.createdAt).getFullYear()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right — action buttons */}
+              {!editMode && !pwMode && (
+                <div className="hero-right relative z-10">
+                  <button onClick={() => setEditMode(true)}
+                    className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold uppercase tracking-wide transition-all"
+                    style={{ background: "rgba(255,255,255,0.18)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)", backdropFilter: "blur(8px)", fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.06em", cursor: "pointer" }}>
+                    <Pencil className="w-3 h-3" /> Edit
+                  </button>
+                  <button onClick={handleLogout}
+                    className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold uppercase tracking-wide transition-all"
+                    style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.75)", border: "1px solid rgba(255,255,255,0.18)", backdropFilter: "blur(8px)", fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.06em", cursor: "pointer" }}>
+                    <LogOut className="w-3 h-3" /> Logout
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Bottom brand strip */}
+            <div className="px-6 py-2 flex justify-end" style={{ background: "#faf5ff", borderTop: "1px solid rgba(167,139,250,0.1)" }}>
+              <p style={{ fontSize: 10, color: "#c4b5fd", letterSpacing: "0.3em", textTransform: "uppercase", fontFamily: "'DM Sans', sans-serif" }}>Cosmic Virtue</p>
+            </div>
+          </div>
 
           {/* ── Edit Profile Form ── */}
           {editMode && (
-            <div className="anim-1 cv-card rounded-3xl p-6 sm:p-8 shadow-lg" style={{ borderColor: "rgba(167,139,250,0.25)" }}>
+            <div className="anim-1 cv-card rounded-3xl p-5 sm:p-8 shadow-lg" style={{ borderColor: "rgba(167,139,250,0.25)" }}>
               <div className="flex items-center justify-between mb-6">
-                <h2 className="cv-serif" style={{ fontSize: 24, fontWeight: 600, color: "#1f1135" }}>Edit Profile</h2>
+                <h2 className="cv-serif" style={{ fontSize: 22, fontWeight: 600, color: "#1f1135" }}>Edit Profile</h2>
                 <button onClick={() => { setEditMode(false); setErrors({}); }}
                   className="w-8 h-8 flex items-center justify-center rounded-full transition-colors"
                   style={{ background: "#f3e8ff", color: "#9333ea" }}>
@@ -422,10 +534,10 @@ export default function ProfilePage() {
                   </div>
                 ))}
 
-                <div style={{ display: "flex", gap: 12, marginTop: 4 }}>
+                <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
                   <button type="button" onClick={() => { setEditMode(false); setErrors({}); }} disabled={saving} className="cv-btn-ghost" style={{ flex: 1 }}>Cancel</button>
                   <button type="submit" disabled={saving} className="cv-btn-primary" style={{ flex: 1 }}>
-                    {saving ? <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : <><Check className="w-4 h-4" /> Save Changes</>}
+                    {saving ? <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : <><Check className="w-4 h-4" /> Save</>}
                   </button>
                 </div>
               </form>
@@ -434,9 +546,9 @@ export default function ProfilePage() {
 
           {/* ── Change Password Form ── */}
           {pwMode && (
-            <div className="anim-1 cv-card rounded-3xl p-6 sm:p-8 shadow-lg" style={{ borderColor: "rgba(167,139,250,0.25)" }}>
+            <div className="anim-1 cv-card rounded-3xl p-5 sm:p-8 shadow-lg" style={{ borderColor: "rgba(167,139,250,0.25)" }}>
               <div className="flex items-center justify-between mb-6">
-                <h2 className="cv-serif" style={{ fontSize: 24, fontWeight: 600, color: "#1f1135" }}>Change Password</h2>
+                <h2 className="cv-serif" style={{ fontSize: 22, fontWeight: 600, color: "#1f1135" }}>Change Password</h2>
                 <button onClick={() => { setPwMode(false); setErrors({}); }}
                   className="w-8 h-8 flex items-center justify-center rounded-full transition-colors"
                   style={{ background: "#f3e8ff", color: "#9333ea" }}>
@@ -460,10 +572,10 @@ export default function ProfilePage() {
                   </div>
                 ))}
 
-                <div style={{ display: "flex", gap: 12, marginTop: 4 }}>
+                <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
                   <button type="button" onClick={() => { setPwMode(false); setErrors({}); }} disabled={saving} className="cv-btn-ghost" style={{ flex: 1 }}>Cancel</button>
                   <button type="submit" disabled={saving} className="cv-btn-primary" style={{ flex: 1 }}>
-                    {saving ? <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : <><KeyRound className="w-4 h-4" /> Update Password</>}
+                    {saving ? <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : <><KeyRound className="w-4 h-4" /> Update</>}
                   </button>
                 </div>
               </form>
@@ -472,21 +584,21 @@ export default function ProfilePage() {
 
           {/* ── Info Grid ── */}
           {!editMode && !pwMode && (
-            <div className="anim-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="anim-2 info-grid">
               {[
                 { icon: <Mail className="w-4 h-4" style={{ color: "#7c3aed" }} />, label: "Email Address", value: user?.email, bg: "#f5f3ff", iconBg: "#ede9fe" },
                 { icon: <Phone className="w-4 h-4" style={{ color: "#db2777" }} />, label: "Phone Number", value: user?.phoneNumber, bg: "#fff0f6", iconBg: "#fce7f3" },
                 { icon: <Calendar className="w-4 h-4" style={{ color: "#7c3aed" }} />, label: "Member Since", value: user?.createdAt ? formatDate(user.createdAt) : "—", bg: "#f5f3ff", iconBg: "#ede9fe" },
                 { icon: <User className="w-4 h-4" style={{ color: "#db2777" }} />, label: "Last Updated", value: user?.updatedAt ? formatDate(user.updatedAt) : "—", bg: "#fff0f6", iconBg: "#fce7f3" },
               ].map(({ icon, label, value, bg, iconBg }, i) => (
-                <div key={i} className="cv-card cv-card-hover rounded-2xl p-5 flex items-start gap-4 shadow-sm cursor-default"
+                <div key={i} className="cv-card cv-card-hover rounded-2xl p-4 sm:p-5 flex items-start gap-3 shadow-sm cursor-default"
                   style={{ borderColor: "rgba(167,139,250,0.15)", background: bg }}>
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: iconBg }}>
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: iconBg }}>
                     {icon}
                   </div>
                   <div style={{ minWidth: 0 }}>
                     <p style={{ fontSize: 10, fontWeight: 700, color: "#c4b5fd", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 4 }}>{label}</p>
-                    <p style={{ fontSize: 14, fontWeight: 600, color: "#1f1135", wordBreak: "break-word" }}>{value || "—"}</p>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: "#1f1135", wordBreak: "break-word" }}>{value || "—"}</p>
                   </div>
                 </div>
               ))}
@@ -495,10 +607,10 @@ export default function ProfilePage() {
 
           {/* ── Change Password Row ── */}
           {!editMode && !pwMode && (
-            <button onClick={() => setPwMode(true)} className="anim-3 cv-card cv-card-hover w-full rounded-2xl px-6 py-4 shadow-sm flex items-center justify-between group"
+            <button onClick={() => setPwMode(true)} className="anim-3 cv-card cv-card-hover w-full rounded-2xl px-4 sm:px-6 py-4 shadow-sm flex items-center justify-between group"
               style={{ borderColor: "rgba(167,139,250,0.2)", cursor: "pointer" }}>
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #ede9fe, #fce7f3)" }}>
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "linear-gradient(135deg, #ede9fe, #fce7f3)" }}>
                   <KeyRound className="w-4 h-4" style={{ color: "#7c3aed" }} />
                 </div>
                 <div style={{ textAlign: "left" }}>
@@ -506,7 +618,7 @@ export default function ProfilePage() {
                   <p style={{ fontSize: 12, color: "#9ca3af", marginTop: 1 }}>Update your account security</p>
                 </div>
               </div>
-              <div className="w-8 h-8 rounded-full flex items-center justify-center transition-all group-hover:translate-x-1" style={{ background: "#f5f3ff" }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center transition-all group-hover:translate-x-1 flex-shrink-0" style={{ background: "#f5f3ff" }}>
                 <ArrowRight className="w-4 h-4" style={{ color: "#7c3aed" }} />
               </div>
             </button>
@@ -514,18 +626,18 @@ export default function ProfilePage() {
 
           {/* ── Account ID ── */}
           {!editMode && !pwMode && (
-            <div className="anim-4 cv-card rounded-2xl px-5 py-3.5 shadow-sm flex items-center gap-3"
+            <div className="anim-4 cv-card rounded-2xl px-4 sm:px-5 py-3.5 shadow-sm flex items-center gap-3"
               style={{ borderColor: "rgba(167,139,250,0.12)" }}>
               <p style={{ fontSize: 10, fontWeight: 700, color: "#d8b4fe", textTransform: "uppercase", letterSpacing: "0.12em", flexShrink: 0 }}>ID</p>
-              <p style={{ fontSize: 12, color: "#c4b5fd", fontFamily: "monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?._id}</p>
+              <p className="account-id-text">{user?._id}</p>
             </div>
           )}
 
           {/* ── Continue Shopping CTA ── */}
           {!editMode && !pwMode && (
-            <div className="anim-5 flex justify-center pt-2 pb-4">
+            <div className="anim-5 cta-wrap">
               <button onClick={() => navigate("/products")}
-                className="group flex items-center gap-2.5 px-9 py-4 rounded-2xl font-semibold text-sm uppercase tracking-widest transition-all duration-300"
+                className="cta-btn group flex items-center justify-center gap-2.5 px-9 py-4 rounded-2xl font-semibold text-sm uppercase tracking-widest transition-all duration-300"
                 style={{ background: "linear-gradient(135deg, #7c3aed, #db2777)", color: "#fff", boxShadow: "0 6px 24px rgba(124,58,237,0.3)", fontFamily: "'DM Sans', sans-serif" }}
                 onMouseEnter={e => e.currentTarget.style.boxShadow = "0 10px 32px rgba(124,58,237,0.45)"}
                 onMouseLeave={e => e.currentTarget.style.boxShadow = "0 6px 24px rgba(124,58,237,0.3)"}>

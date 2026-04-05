@@ -93,9 +93,12 @@ useEffect(() => {
     headers: { 'X-CSCAPI-KEY': '6c2ac2fda3c996e2b63b3f17704a86a6b40df89a798c8c3ab332a522b8424d82' }
   })
   .then(r => r.json())
-  .then(data => setStateList(data.sort((a, b) => a.name.localeCompare(b.name))))
-  .catch(err => console.error('Failed to load states:', err));
-}, []);
+  .then(data => {
+    console.log('Cities data:', data); // ← ADD THIS
+    setCityList(data.sort((a, b) => a.name.localeCompare(b.name)));
+  })
+  .catch(err => console.error('Failed to load cities:', err));
+}, [shippingAddress.stateCode]);
 
 useEffect(() => {
   if (!shippingAddress.stateCode) return;

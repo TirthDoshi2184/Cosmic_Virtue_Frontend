@@ -8,8 +8,8 @@ const AdminLogin = () => {
   const [showPass, setShowPass] = useState(false);
   const navigate = useNavigate();
 
-  const API = "http://localhost:3000"; // Change to import.meta.env.VITE_API_URL in production
-
+//   const API = "http://localhost:3000"; // Change to import.meta.env.VITE_API_URL in production
+    const API = import.meta.env.VITE_API_URL || "http://localhost:3000";
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
     setError('');

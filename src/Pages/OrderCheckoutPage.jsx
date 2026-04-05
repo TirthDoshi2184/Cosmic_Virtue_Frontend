@@ -90,7 +90,7 @@ useEffect(() => {
 
 useEffect(() => {
   fetch('https://api.countrystatecity.in/v1/countries/IN/states', {
-    headers: { 'X-CSCAPI-KEY': 'YOUR_API_KEY_HERE' }
+    headers: { 'X-CSCAPI-KEY': '6c2ac2fda3c996e2b63b3f17704a86a6b40df89a798c8c3ab332a522b8424d82' }
   })
   .then(r => r.json())
   .then(data => setStateList(data.sort((a, b) => a.name.localeCompare(b.name))))
@@ -1335,20 +1335,26 @@ if (savedPhone && wasVerified === 'true') {
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
                             City *
                           </label>
-                          <input
-                            type="text"
-                            value={shippingAddress.city}
-                            onChange={(e) =>
-                              setShippingAddress({
-                                ...shippingAddress,
-                                city: e.target.value,
-                              })
-                            }
-                            className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
-                              errors.city ? "border-red-500" : "border-gray-200"
-                            }`}
-                            placeholder="Mumbai"
-                          />
+                          {shippingAddress.stateCode ? (
+  <select
+    value={shippingAddress.city}
+    onChange={(e) => setShippingAddress({ ...shippingAddress, city: e.target.value })}
+    className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
+      errors.city ? "border-red-500" : "border-gray-200"
+    }`}
+  >
+    <option value="">Select City</option>
+    {cityList.map(c => (
+      <option key={c.id} value={c.name}>{c.name}</option>
+    ))}
+  </select>
+) : (
+  <input
+    disabled
+    placeholder="Select a state first"
+    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-gray-50 text-gray-400 cursor-not-allowed"
+  />
+)}
                           {errors.city && (
                             <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
                               <AlertCircle className="w-3 h-3" /> {errors.city}

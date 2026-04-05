@@ -88,33 +88,33 @@ useEffect(() => {
   };
 }, []);// runs once on mount
 
+// STATES
+useEffect(() => {
+  fetch('https://api.countrystatecity.in/v1/countries/IN/states', {
+    headers: { 'X-CSCAPI-KEY': '6c2ac2fda3c996e2b63b3f17704a86a6b40df89a798c8c3ab332a522b8424d82' }
+  })
+  .then(r => r.json())
+  .then(data => {
+    console.log('States loaded:', data.length);
+    setStateList(Array.isArray(data) ? data.sort((a, b) => a.name.localeCompare(b.name)) : []);
+  })
+  .catch(err => console.error('Failed to load states:', err));
+}, []);
+
+// CITIES
 useEffect(() => {
   if (!shippingAddress.stateCode) return;
   setCityList([]);
-  
-  console.log('Fetching cities for:', shippingAddress.stateCode); // ← log 1
-  
   fetch(`https://api.countrystatecity.in/v1/countries/IN/states/${shippingAddress.stateCode}/cities`, {
     headers: { 'X-CSCAPI-KEY': '6c2ac2fda3c996e2b63b3f17704a86a6b40df89a798c8c3ab332a522b8424d82' }
   })
   .then(r => r.json())
   .then(data => {
-    console.log('Cities response:', data); // ← log 2
+    console.log('Cities loaded:', data.length);
     setCityList(Array.isArray(data) ? data.sort((a, b) => a.name.localeCompare(b.name)) : []);
   })
-  .catch(err => console.error('Cities fetch error:', err));
-}, [shippingAddress.stateCode]);
-useEffect(() => {
-  if (!shippingAddress.stateCode) return;
-  setCityList([]);
-  fetch(`https://api.countrystatecity.in/v1/countries/IN/states/${shippingAddress.stateCode}/cities`, {
-    headers: { 'X-CSCAPI-KEY': 'YOUR_API_KEY_HERE' }
-  })
-  .then(r => r.json())
-  .then(data => setCityList(data.sort((a, b) => a.name.localeCompare(b.name))))
   .catch(err => console.error('Failed to load cities:', err));
 }, [shippingAddress.stateCode]);
-
 // ============================================
     // UTILITY FUNCTIONS
     // ============================================

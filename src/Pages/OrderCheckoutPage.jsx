@@ -89,17 +89,21 @@ useEffect(() => {
 }, []);// runs once on mount
 
 useEffect(() => {
-  fetch('https://api.countrystatecity.in/v1/countries/IN/states', {
+  if (!shippingAddress.stateCode) return;
+  setCityList([]);
+  
+  console.log('Fetching cities for:', shippingAddress.stateCode); // ← log 1
+  
+  fetch(`https://api.countrystatecity.in/v1/countries/IN/states/${shippingAddress.stateCode}/cities`, {
     headers: { 'X-CSCAPI-KEY': '6c2ac2fda3c996e2b63b3f17704a86a6b40df89a798c8c3ab332a522b8424d82' }
   })
   .then(r => r.json())
   .then(data => {
-    console.log('Cities data:', data); // ← ADD THIS
-    setCityList(data.sort((a, b) => a.name.localeCompare(b.name)));
+    console.log('Cities response:', data); // ← log 2
+    setCityList(Array.isArray(data) ? data.sort((a, b) => a.name.localeCompare(b.name)) : []);
   })
-  .catch(err => console.error('Failed to load cities:', err));
+  .catch(err => console.error('Cities fetch error:', err));
 }, [shippingAddress.stateCode]);
-
 useEffect(() => {
   if (!shippingAddress.stateCode) return;
   setCityList([]);

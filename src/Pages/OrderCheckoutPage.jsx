@@ -47,6 +47,8 @@
 
     const [confirmationResult, setConfirmationResult] = useState(null);
 
+    const [stateList, setStateList] = useState([]);
+const [cityList, setCityList] = useState([]);
     const API_BASE_URL = import.meta.env.VITE_API_URL;
 
     // Form States
@@ -58,14 +60,10 @@
     });
 
     const [shippingAddress, setShippingAddress] = useState({
-      address: "",
-      apartment: "",
-      city: "",
-      state: "",
-      pincode: "",
-      country: "India",
-      landmark: "",
-    });
+  address: "", apartment: "", city: "", state: "",
+  stateCode: "",   // ← add this
+  pincode: "", country: "India", landmark: "",
+});
 
     const [billingAddress, setBillingAddress] = useState({
       address: "",
@@ -89,7 +87,28 @@ useEffect(() => {
     }
   };
 }, []);// runs once on mount
-    // ============================================
+
+useEffect(() => {
+  fetch('https://api.countrystatecity.in/v1/countries/IN/states', {
+    headers: { 'X-CSCAPI-KEY': 'YOUR_API_KEY_HERE' }
+  })
+  .then(r => r.json())
+  .then(data => setStateList(data.sort((a, b) => a.name.localeCompare(b.name))))
+  .catch(err => console.error('Failed to load states:', err));
+}, []);
+
+useEffect(() => {
+  if (!shippingAddress.stateCode) return;
+  setCityList([]);
+  fetch(`https://api.countrystatecity.in/v1/countries/IN/states/${shippingAddress.stateCode}/cities`, {
+    headers: { 'X-CSCAPI-KEY': 'YOUR_API_KEY_HERE' }
+  })
+  .then(r => r.json())
+  .then(data => setCityList(data.sort((a, b) => a.name.localeCompare(b.name))))
+  .catch(err => console.error('Failed to load cities:', err));
+}, [shippingAddress.stateCode]);
+
+// ============================================
     // UTILITY FUNCTIONS
     // ============================================
 
@@ -549,14 +568,15 @@ if (savedPhone && wasVerified === 'true') {
       });
 
       setShippingAddress({
-        address: address.address || "",
-        apartment: address.apartment || "",
-        city: address.city || "",
-        state: address.state || "",
-        pincode: address.pincode || "",
-        country: address.country || "India",
-        landmark: address.landmark || "",
-      });
+  address: address.address || "",
+  apartment: address.apartment || "",
+  city: address.city || "",
+  state: address.state || "",
+  stateCode: address.stateCode || "",   // ← add this
+  pincode: address.pincode || "",
+  country: address.country || "India",
+  landmark: address.landmark || "",
+});
 
       setShowSavedAddresses(false);
        if (address.pincode) {
@@ -1340,20 +1360,26 @@ if (savedPhone && wasVerified === 'true') {
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
                             State *
                           </label>
-                          <input
-                            type="text"
-                            value={shippingAddress.state}
-                            onChange={(e) =>
-                              setShippingAddress({
-                                ...shippingAddress,
-                                state: e.target.value,
-                              })
-                            }
-                            className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
-                              errors.state ? "border-red-500" : "border-gray-200"
-                            }`}
-                            placeholder="Maharashtra"
-                          />
+                          <select
+  value={shippingAddress.stateCode}
+  onChange={(e) => {
+    const selected = stateList.find(s => s.iso2 === e.target.value);
+    setShippingAddress({
+      ...shippingAddress,
+      state: selected?.name || "",
+      stateCode: e.target.value,
+      city: "",   // reset city on state change
+    });
+  }}
+  className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
+    errors.state ? "border-red-500" : "border-gray-200"
+  }`}
+>
+  <option value="">Select State</option>
+  {stateList.map(s => (
+    <option key={s.iso2} value={s.iso2}>{s.name}</option>
+  ))}
+</select>
                           {errors.state && (
                             <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
                               <AlertCircle className="w-3 h-3" /> {errors.state}
@@ -1525,22 +1551,26 @@ if (savedPhone && wasVerified === 'true') {
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
                               City *
                             </label>
-                            <input
-                              type="text"
-                              value={billingAddress.city}
-                              onChange={(e) =>
-                                setBillingAddress({
-                                  ...billingAddress,
-                                  city: e.target.value,
-                                })
-                              }
-                              className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
-                                errors.billingCity
-                                  ? "border-red-500"
-                                  : "border-gray-200"
-                              }`}
-                              placeholder="Mumbai"
-                            />
+                            {shippingAddress.stateCode ? (
+  <select
+    value={shippingAddress.city}
+    onChange={(e) => setShippingAddress({ ...shippingAddress, city: e.target.value })}
+    className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
+      errors.city ? "border-red-500" : "border-gray-200"
+    }`}
+  >
+    <option value="">Select City</option>
+    {cityList.map(c => (
+      <option key={c.id} value={c.name}>{c.name}</option>
+    ))}
+  </select>
+) : (
+  <input
+    disabled
+    placeholder="Select a state first"
+    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-gray-50 text-gray-400 cursor-not-allowed"
+  />
+)}
                             {errors.billingCity && (
                               <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
                                 <AlertCircle className="w-3 h-3" />{" "}

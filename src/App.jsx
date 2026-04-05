@@ -27,6 +27,16 @@ import WishlistPage from "./Pages/WishlistPage";
 import PrivacyPolicy from "./Pages/Privacy_Policy";
 import TermsAndConditions from "./Pages/Terms_Condition_Page";
 import ProfilePage from "./Pages/ProfilePage";
+import AdminLogin from "./Pages/Admin/AdminLogin";
+import AdminRoute from "./Components/AdminRoute";
+import AdminDashboard from "./Pages/Admin/AdminDashboard";
+import AdminProducts from "./Pages/Admin/AdminProduct";
+import AdminOrders from "./Pages/Admin/AdminOrders";
+import AdminUsers from "./Pages/Admin/AdminUser";
+import AdminSettings from "./Pages/Admin/AdminSetting";
+import AdminRegister from "./Pages/Admin/AdminRegister";
+import AdminOrderDetail from "./Pages/Admin/AdminOrderDetails";
+import AdminLayout from "./Pages/Admin/AdminSidebar";
 
 // ScrollToTop Component
 function ScrollToTop() {
@@ -45,6 +55,7 @@ function App() {
 
   // Paths where navbar/footer should be hidden
   const hideLayoutPaths = [
+    "/admin"
   ];
 
   // Check if current path matches any of the patterns
@@ -77,7 +88,25 @@ function App() {
         <Route path="/term" element={<TermsAndConditions/>}/>
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/order-success" element={<OrderHistoryPage />} />
-        
+
+
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/register" element={
+            <AdminRegister />
+
+        } />
+        <Route path="/admin" element={
+  <AdminRoute>
+    <AdminLayout />
+  </AdminRoute>
+}>
+  <Route path="dashboard" element={<AdminDashboard />} />
+  <Route path="products" element={<AdminProducts />} />
+  <Route path="orders" element={<AdminOrders />} />
+  <Route path="orders/:id" element={<AdminOrderDetail/>} />
+  <Route path="users" element={<AdminUsers />} />
+  <Route path="settings" element={<AdminSettings />} />
+</Route>
         {/* 404 Route - should be last */}
         <Route path="*" element={
           <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950/30 to-slate-950 flex items-center justify-center">

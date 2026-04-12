@@ -222,6 +222,7 @@ const getSelectedCategoryName = () => {
       if (isUserLoggedIn()) {
         await addToCartAPI(product.id, 1);
         console.log('Added to cart (API)');
+            localStorage.removeItem('cart'); // ← ADD THIS LINE
       } else {
         addToLocalCart(cartItem);
         console.log('Added to cart (localStorage)');

@@ -332,6 +332,7 @@ const CartSidebar = ({ isOpen, onClose }) => {
               </button>
             </div>
           )}
+          
 
           {/* Items list */}
           {!loading && cartItems.length > 0 && (

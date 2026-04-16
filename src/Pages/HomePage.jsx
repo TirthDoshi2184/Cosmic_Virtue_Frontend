@@ -650,7 +650,7 @@ useEffect(() => {
     {/* Left — image */}
     <div className="lg:w-1/2 relative min-h-[320px] lg:min-h-[480px] overflow-hidden">
       <img
-        src="https://res.cloudinary.com/drl7llkoc/image/upload/v1771015981/Banner3_vuwdrj.jpg"
+        src="https://res.cloudinary.com/ddpvtobbh/image/upload/v1776347746/Bottle_Main_Photo_kkytos.png"
         alt="Our Story"
         className="w-full h-full object-cover absolute inset-0"
         style={{ transition: 'transform 0.6s ease' }}

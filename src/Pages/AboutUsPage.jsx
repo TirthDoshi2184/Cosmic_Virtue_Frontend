@@ -149,17 +149,15 @@ const AboutUs = () => {
         {/* BRAND STORY */}
         <section className="overflow-hidden">
           <div className="flex flex-col lg:flex-row min-h-[520px]">
-            <div className="lg:w-1/2 relative min-h-[300px] lg:min-h-[520px] overflow-hidden">
-              <img
-                src="https://res.cloudinary.com/drl7llkoc/image/upload/v1771015981/Banner3_vuwdrj.jpg"
-                alt="Our Studio"
-                className="w-full h-full object-cover absolute inset-0"
-                style={{ transition: 'transform 0.7s ease' }}
-                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.04)'}
-                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent" />
-            </div>
+            <div className="lg:w-1/2 relative overflow-hidden flex items-center justify-center">
+  <img
+    src="https://res.cloudinary.com/ddpvtobbh/image/upload/v1776347746/Bottle_Main_Photo_kkytos.png"
+    alt="Our Studio"
+    className="w-full h-auto object-contain transition-transform duration-700 ease-in-out hover:scale-105"
+  />
+
+  <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent pointer-events-none" />
+</div>
 
             <div className="lg:w-1/2 bg-white flex items-center px-8 sm:px-14 py-14">
               <div className="max-w-lg">

@@ -173,10 +173,14 @@ const sendOTP = async () => {
 
   try {
     // Clear old verifier if exists
-    if (window.recaptchaVerifier) {
-      try { window.recaptchaVerifier.clear(); } catch (e) {}
-      window.recaptchaVerifier = null;
-    }
+if (window.recaptchaVerifier) {
+  try { window.recaptchaVerifier.clear(); } catch (e) {}
+  window.recaptchaVerifier = null;
+}
+
+// ✅ Also wipe the DOM element so Firebase doesn't see a "already rendered" widget
+const container = document.getElementById('recaptcha-container');
+if (container) container.innerHTML = '';
 
     // Create verifier on the STATIC div already in DOM
     window.recaptchaVerifier = new RecaptchaVerifier(

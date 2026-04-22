@@ -172,28 +172,23 @@ const sendOTP = async () => {
   setVerifying(true);
 
   try {
-    // Clear old verifier if exists
-if (window.recaptchaVerifier) {
-  try { window.recaptchaVerifier.clear(); } catch (e) {}
-  window.recaptchaVerifier = null;
-}
-
-// ✅ Also wipe the DOM element so Firebase doesn't see a "already rendered" widget
-const container = document.getElementById('recaptcha-container');
-if (container) container.innerHTML = '';
-
-    // Create verifier on the STATIC div already in DOM
-    window.recaptchaVerifier = new RecaptchaVerifier(
-      auth,
-      'recaptcha-container',  // must already exist in DOM
-      {
-        size: 'invisible',
-        callback: () => {},
-        'expired-callback': () => {
-          window.recaptchaVerifier = null;
+    // ✅ Only create verifier if it doesn't already exist
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(
+        auth,
+        'recaptcha-container',
+        {
+          size: 'invisible',
+          callback: () => {},
+          'expired-callback': () => {
+            // Don't null it here — just let next sendOTP recreate if needed
+            window.recaptchaVerifier = null;
+          }
         }
-      }
-    );
+      );
+      // ✅ Render it once explicitly
+      await window.recaptchaVerifier.render();
+    }
 
     const result = await signInWithPhoneNumber(
       auth,
@@ -207,11 +202,17 @@ if (container) container.innerHTML = '';
 
   } catch (error) {
     console.error('Firebase OTP error:', error.code, error.message);
+
+    // ✅ On error, fully destroy so next attempt starts clean
     if (window.recaptchaVerifier) {
       try { window.recaptchaVerifier.clear(); } catch (e) {}
       window.recaptchaVerifier = null;
     }
-    alert('Failed to send OTP: ' + error.message);
+    // ✅ Wipe DOM so Firebase doesn't complain on retry
+    const container = document.getElementById('recaptcha-container');
+    if (container) container.innerHTML = '';
+
+    alert('Failed to send OTP. Please try again.');
   }
 
   setVerifying(false);

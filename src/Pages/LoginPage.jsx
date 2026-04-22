@@ -1,8 +1,18 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Mail, Lock, Heart, ShoppingBag, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { auth } from '../utils/firebase';
+import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
 
 const Login = () => {
+
+  const [loginMode, setLoginMode] = useState('email'); // ADD: 'email' | 'phone'
+const [phoneData, setPhoneData] = useState({ phone: '', otp: '' });
+const [otpSent, setOtpSent] = useState(false);
+const [confirmationResult, setConfirmationResult] = useState(null);
+const [verifying, setVerifying] = useState(false);
+
+
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -12,6 +22,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
+  
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -109,6 +120,60 @@ const Login = () => {
     }
   };
 
+  const sendPhoneOTP = async () => {
+  if (!/^[0-9]{10}$/.test(phoneData.phone)) {
+    setMessage({ type: 'error', text: 'Enter valid 10-digit number' });
+    return;
+  }
+  setVerifying(true);
+  try {
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container-login', {
+        size: 'invisible',
+        callback: () => {},
+      });
+      await window.recaptchaVerifier.render();
+    }
+    const result = await signInWithPhoneNumber(auth, `+91${phoneData.phone}`, window.recaptchaVerifier);
+    setConfirmationResult(result);
+    setOtpSent(true);
+    setMessage({ type: 'success', text: 'OTP sent!' });
+  } catch (err) {
+    if (window.recaptchaVerifier) { window.recaptchaVerifier.clear(); window.recaptchaVerifier = null; }
+    setMessage({ type: 'error', text: 'Failed to send OTP. Try again.' });
+  }
+  setVerifying(false);
+};
+
+const handlePhoneLogin = async () => {
+  if (!confirmationResult || phoneData.otp.length !== 6) return;
+  setLoading(true);
+  try {
+    const userCredential = await confirmationResult.confirm(phoneData.otp);
+    const firebaseToken = await userCredential.user.getIdToken();
+
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/users/login/phone`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: phoneData.phone, firebaseToken }),
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('userId', data.user._id);
+      // same cart merge logic already in handleSubmit — copy it here too
+      setMessage({ type: 'success', text: 'Welcome back!' });
+      setTimeout(() => navigate('/'), 1500);
+    } else {
+      setMessage({ type: 'error', text: data.error || 'Login failed' });
+    }
+  } catch (err) {
+    setMessage({ type: 'error', text: 'Invalid OTP. Try again.' });
+  }
+  setLoading(false);
+};
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -172,11 +237,37 @@ const Login = () => {
           {/* Right Side - Login Form */}
           <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-8 md:p-10">
             <div className="mb-8">
-              <h3 className="text-2xl font-serif text-gray-900 mb-2">Sign In</h3>
-              <p className="text-gray-600 text-sm">
-                Enter your credentials to access your account
-              </p>
-            </div>
+  <h3 className="text-2xl font-serif text-gray-900 mb-2">Sign In</h3>
+  <p className="text-gray-600 text-sm mb-6">
+    Enter your credentials to access your account
+  </p>
+
+  {/* Tab Switcher */}
+  <div className="flex border border-gray-200 rounded-lg p-1 bg-gray-50">
+    <button
+      type="button"
+      onClick={() => { setLoginMode('email'); setMessage({ type: '', text: '' }); }}
+      className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
+        loginMode === 'email'
+          ? 'bg-white text-purple-600 shadow-sm'
+          : 'text-gray-500 hover:text-gray-700'
+      }`}
+    >
+      Email
+    </button>
+    <button
+      type="button"
+      onClick={() => { setLoginMode('phone'); setMessage({ type: '', text: '' }); }}
+      className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
+        loginMode === 'phone'
+          ? 'bg-white text-purple-600 shadow-sm'
+          : 'text-gray-500 hover:text-gray-700'
+      }`}
+    >
+      Phone (OTP)
+    </button>
+  </div>
+</div>
 
             {/* Message Display */}
             {message.text && (
@@ -189,8 +280,10 @@ const Login = () => {
               </div>
             )}
 
+<div id="recaptcha-container-login">
             {/* Login Form */}
-            <form onSubmit={handleSubmit} className="space-y-6">
+           {loginMode === 'email' && (
+<form onSubmit={handleSubmit} className="space-y-6">
               {/* Email Field */}
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -288,6 +381,78 @@ const Login = () => {
                 )}
               </button>
             </form>
+            )}
+
+            {loginMode === 'phone' && (
+  <div className="space-y-6">
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Phone Number
+      </label>
+      <div className="flex gap-2">
+        <input
+          type="tel"
+          value={phoneData.phone}
+          onChange={(e) => {
+            setPhoneData({ ...phoneData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) });
+            setOtpSent(false);
+            setConfirmationResult(null);
+          }}
+          placeholder="9876543210"
+          maxLength="10"
+          disabled={otpSent}
+          className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
+        />
+        <button
+          type="button"
+          onClick={sendPhoneOTP}
+          disabled={verifying || phoneData.phone.length !== 10}
+          className="px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+        >
+          {verifying ? 'Sending...' : otpSent ? 'Resend' : 'Send OTP'}
+        </button>
+      </div>
+    </div>
+
+    {otpSent && (
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Enter OTP
+        </label>
+        <input
+          type="text"
+          value={phoneData.otp}
+          onChange={(e) => setPhoneData({ ...phoneData, otp: e.target.value.replace(/\D/g, '').slice(0, 6) })}
+          placeholder="6-digit OTP"
+          maxLength="6"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
+        />
+        <p className="text-xs text-gray-500 mt-1">OTP sent to +91 {phoneData.phone}</p>
+      </div>
+    )}
+
+    <button
+      type="button"
+      onClick={handlePhoneLogin}
+      disabled={loading || phoneData.otp.length !== 6}
+      className="w-full bg-purple-600 text-white font-medium py-3 px-6 rounded-lg hover:bg-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+    >
+      {loading ? (
+        <>
+          <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span>Verifying...</span>
+        </>
+      ) : (
+        <span>Verify & Sign In</span>
+      )}
+    </button>
+  </div>
+)}
+
+            
 
             {/* Divider */}
             <div className="relative my-8">
@@ -314,9 +479,9 @@ const Login = () => {
           </div>
         </div>
       </div>
-
+</div>
       {/* Footer */}
-      
+      <div id="recaptcha-container-login"></div>
       {/* Custom animations */}
       <style jsx>{`
         @keyframes slideDown {

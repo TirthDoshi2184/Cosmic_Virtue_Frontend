@@ -80,14 +80,17 @@ const [cityList, setCityList] = useState([]);
 
 // Cleanup reCAPTCHA on unmount only
 useEffect(() => {
+  // ✅ Clear any previously stored verification state
+  localStorage.removeItem('userPhone');
+  localStorage.removeItem('phoneVerified');
+
   return () => {
     if (window.recaptchaVerifier) {
       window.recaptchaVerifier.clear();
       window.recaptchaVerifier = null;
     }
   };
-}, []);// runs once on mount
-
+}, []);
 // STATES
 useEffect(() => {
   fetch('https://api.countrystatecity.in/v1/countries/IN/states', {
@@ -213,8 +216,6 @@ const sendOTP = async () => {
     const verifyOTP = async () => {
   if (SKIP_OTP) {
     setPhoneVerified(true);
-    localStorage.setItem('userPhone', contactInfo.phone);
-    localStorage.setItem('phoneVerified', 'true');
     return;
   }
 
@@ -246,8 +247,6 @@ const sendOTP = async () => {
 
     if (data.success) {
       setPhoneVerified(true);
-      localStorage.setItem('userPhone', contactInfo.phone);
-      localStorage.setItem('phoneVerified', 'true');
       loadAddressesByPhone(contactInfo.phone);
       alert('Phone verified successfully! ✓');
     } else {
@@ -262,42 +261,49 @@ const sendOTP = async () => {
   setVerifying(false);
 };
     // CHANGE: Load addresses by phone
-    const loadAddressesByPhone = (phone) => {
-      // CHANGED
-      try {
-        const key = `savedAddresses_${phone}`; // CHANGED
-        const addresses = JSON.parse(localStorage.getItem(key) || "[]");
-        setSavedAddresses(addresses);
-      } catch (error) {
-        console.error("Error loading addresses:", error);
-      }
-    };
-
-    // CHANGE: Save address with phone
-    const saveAddressWithPhone   = (address) => {
-      // CHANGED
-      const phone = contactInfo.phone; // CHANGED
-
-      if (!phoneVerified) {
-        // CHANGED
-        alert("Please verify your phone number first");
-        return;
-      }
-
-      const key = `savedAddresses_${phone}`; // CHANGED
+const loadAddressesByPhone = async (phone) => {
+  try {
+    // Try backend first
+    const res = await fetch(`${API_BASE_URL}/checkout/addresses/${phone}`);
+    const data = await res.json();
+    if (data.success && data.data.length > 0) {
+      setSavedAddresses(data.data);
+    } else {
+      // Fallback to localStorage
+      const key = `savedAddresses_${phone}`;
       const addresses = JSON.parse(localStorage.getItem(key) || "[]");
-
-      const newAddress = {
-        id: Date.now(),
-        phone: phone, // CHANGED
-        ...address,
-        savedAt: new Date().toISOString(),
-      };
-
-      addresses.push(newAddress);
-      localStorage.setItem(key, JSON.stringify(addresses));
       setSavedAddresses(addresses);
-    };
+    }
+  } catch (error) {
+    console.error("Error loading addresses:", error);
+  }
+};
+    // CHANGE: Save address with phone
+    const saveAddressWithPhone = async (address) => {
+  const phone = contactInfo.phone;
+  if (!phoneVerified) {
+    alert("Please verify your phone number first");
+    return;
+  }
+
+  try {
+    // Save to backend
+    await fetch(`${API_BASE_URL}/checkout/addresses`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, ...address })
+    });
+    // Refresh list
+    loadAddressesByPhone(phone);
+  } catch(err){
+    // Fallback to localStorage
+    const key = `savedAddresses_${phone}`;
+    const addresses = JSON.parse(localStorage.getItem(key) || "[]");
+    addresses.push({ id: Date.now(), phone, ...address, savedAt: new Date().toISOString() });
+    localStorage.setItem(key, JSON.stringify(addresses));
+    setSavedAddresses(addresses);
+  }
+};
 
     const [pincodeStatus, setPincodeStatus] = useState(null); // null | 'checking' | 'ok' | 'error'
 
@@ -419,16 +425,8 @@ const checkPincodeServiceability = async (pincode) => {
       setCartItems(cart);
 
       // ADD THESE LINES:
-      const savedPhone = localStorage.getItem('userPhone');
-const wasVerified = localStorage.getItem('phoneVerified');
-if (savedPhone && wasVerified === 'true') {
-  setContactInfo(prev => ({ ...prev, phone: savedPhone }));
-  setPhoneVerified(true);
-  loadAddressesByPhone(savedPhone);
-}else {
-        const addresses = getSavedAddresses();
-        setSavedAddresses(addresses);
-      }
+      const addresses = getSavedAddresses();
+setSavedAddresses(addresses);
     } catch (error) {
       console.error("Error loading cart:", error);
     } finally {
@@ -594,7 +592,7 @@ if (savedPhone && wasVerified === 'true') {
     // ============================================
     // PLACE ORDER
     // ============================================
-    const handlePlaceOrder = async () => {
+  const handlePlaceOrder = async () => {
   if (!paymentMethod) {
     setErrors({ payment: "Please select a payment method" });
     return;
@@ -615,7 +613,6 @@ if (savedPhone && wasVerified === 'true') {
       userId
     };
 
-    // Step 1: Place order in your DB first (always)
     const response = await fetch(`${API_BASE_URL}/checkout/orders`, {
       method:  'POST',
       headers: {
@@ -630,7 +627,6 @@ if (savedPhone && wasVerified === 'true') {
 
     const { orderId, orderNumber } = data.data;
 
-    // Step 2: COD — done, go to success
     if (paymentMethod === 'cod') {
       localStorage.setItem('cart', '[]');
       navigate('/order-success', {
@@ -643,8 +639,6 @@ if (savedPhone && wasVerified === 'true') {
       return;
     }
 
-    // Step 3: Online — open Razorpay
-    
     const rzpRes = await fetch(`${API_BASE_URL}/checkout/payment/create-order`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -654,13 +648,17 @@ if (savedPhone && wasVerified === 'true') {
     const rzpData = await rzpRes.json();
     if (!rzpData.success) throw new Error('Payment initialization failed');
 
+    // ✅ FIX: declare paymentFailed flag BEFORE building options
+    let paymentFailed = false;
+
+    // ✅ FIX: build complete options object BEFORE calling new Razorpay()
     const options = {
       key:         rzpData.data.keyId,
       amount:      rzpData.data.amount,
       currency:    rzpData.data.currency,
-      name:        'Your Candle Brand',           // ← change this
+      name:        'Your Candle Brand',
       description: `Order #${orderNumber}`,
-      image:       '/logo.png',                   // ← your logo
+      image:       '/logo.png',
       order_id:    rzpData.data.razorpayOrderId,
 
       prefill: {
@@ -670,10 +668,9 @@ if (savedPhone && wasVerified === 'true') {
       },
 
       theme: {
-        color: '#7C3AED'                          // purple to match your brand
+        color: '#7C3AED'
       },
 
-      // Payment SUCCESS
       handler: async (razorpayResponse) => {
         try {
           const verifyRes = await fetch(`${API_BASE_URL}/checkout/payment/verify`, {
@@ -706,30 +703,39 @@ if (savedPhone && wasVerified === 'true') {
         }
       },
 
-      // Payment FAILED or DISMISSED
+      // ✅ FIX: ondismiss is defined here inside options, before new Razorpay()
       modal: {
-        ondismiss: async () => {
+        ondismiss: () => {
+          if (paymentFailed) return; // failure handler already ran
           setProcessing(false);
-          alert('Payment cancelled. Your order is saved — you can retry from Order History.');
+          const retry = window.confirm(
+            `Payment was cancelled. Your order #${orderNumber} is saved.\n\nClick OK to retry payment, or Cancel to go to Order History.`
+          );
+          if (retry) {
+            rzp.open();
+          } else {
+            navigate('/orders');
+          }
         }
       }
     };
 
+    // ✅ FIX: construct AFTER options is fully built
     const rzp = new window.Razorpay(options);
 
-    // Handle payment failure inside Razorpay modal
     rzp.on('payment.failed', (response) => {
+      paymentFailed = true;
       setProcessing(false);
-      alert(`Payment failed: ${response.error.description}. Order #${orderNumber} saved — retry anytime.`);
+      alert(`Payment failed: ${response.error.description}. Order #${orderNumber} is saved — retry from Order History.`);
     });
 
     rzp.open();
 
-  } catch (error) {
+  }catch (error) {
     console.error('Order error:', error);
+    setProcessing(false); // ✅ always reset processing on any error
     alert(error.message || 'Failed to place order. Please try again.');
   } finally {
-    // Don't set processing false here for online — Razorpay modal is still open
     if (paymentMethod === 'cod') setProcessing(false);
   }
 };
@@ -1564,10 +1570,10 @@ if (savedPhone && wasVerified === 'true') {
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
                               City *
                             </label>
-                            {shippingAddress.stateCode ? (
+                            {billingAddress.stateCode ? (
   <select
-    value={shippingAddress.city}
-    onChange={(e) => setShippingAddress({ ...shippingAddress, city: e.target.value })}
+    value={billingAddress.city}
+    onChange={(e) => setBillingAddress({ ...billingAddress, city: e.target.value })}
     className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
       errors.city ? "border-red-500" : "border-gray-200"
     }`}

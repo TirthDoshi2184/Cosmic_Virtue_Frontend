@@ -606,142 +606,127 @@ setSavedAddresses(addresses);
   setProcessing(true);
 
   try {
-    const userId    = getUserId();
+    const userId = getUserId();
     const orderData = {
       contactInfo,
       shippingAddress,
       billingAddress: sameAsShipping ? shippingAddress : billingAddress,
-      items:          cartItems,
+      items: cartItems,
       paymentMethod,
       pricing: { subtotal, shipping, total },
       phoneVerified,
       userId
     };
 
-    const response = await fetch(`${API_BASE_URL}/checkout/orders`, {
-      method:  'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(getUserToken() && { Authorization: `Bearer ${getUserToken()}` })
-      },
-      body: JSON.stringify(orderData)
-    });
-
-    const data = await response.json();
-    if (!data.success) throw new Error(data.message || 'Failed to place order');
-
-    const { orderId, orderNumber } = data.data;
-
+    // COD: create order directly as before
     if (paymentMethod === 'cod') {
+      const response = await fetch(`${API_BASE_URL}/checkout/orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(getUserToken() && { Authorization: `Bearer ${getUserToken()}` })
+        },
+        body: JSON.stringify(orderData)
+      });
+
+      const data = await response.json();
+      if (!data.success) throw new Error(data.message || 'Failed to place order');
+
       localStorage.setItem('cart', '[]');
+      setProcessing(false);
       navigate('/order-success', {
         state: {
-          orderData:   data.data,
-          orderNumber: orderNumber,
-          tracking:    data.data.tracking
+          orderData: data.data,
+          orderNumber: data.data.orderNumber,
+          tracking: data.data.tracking
         }
       });
       return;
     }
 
+    // ONLINE: create Razorpay order FIRST (no DB entry yet)
     const rzpRes = await fetch(`${API_BASE_URL}/checkout/payment/create-order`, {
-      method:  'POST',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ amount: total, orderId })
+      body: JSON.stringify({ amount: total })
     });
 
     const rzpData = await rzpRes.json();
     if (!rzpData.success) throw new Error('Payment initialization failed');
 
-    // ✅ FIX: declare paymentFailed flag BEFORE building options
     let paymentFailed = false;
 
-    // ✅ FIX: build complete options object BEFORE calling new Razorpay()
     const options = {
-      key:         rzpData.data.keyId,
-      amount:      rzpData.data.amount,
-      currency:    rzpData.data.currency,
-      name:        'Your Candle Brand',
-      description: `Order #${orderNumber}`,
-      image:       '/logo.png',
-      order_id:    rzpData.data.razorpayOrderId,
+      key: rzpData.data.keyId,
+      amount: rzpData.data.amount,
+      currency: rzpData.data.currency,
+      name: 'Your Candle Brand',
+      description: 'Order Payment',
+      image: '/logo.png',
+      order_id: rzpData.data.razorpayOrderId,
 
       prefill: {
-        name:    `${contactInfo.firstName} ${contactInfo.lastName}`,
-        email:   contactInfo.email,
+        name: `${contactInfo.firstName} ${contactInfo.lastName}`,
+        email: contactInfo.email,
         contact: contactInfo.phone
       },
 
-      theme: {
-        color: '#7C3AED'
-      },
+      theme: { color: '#7C3AED' },
 
       handler: async (razorpayResponse) => {
         try {
-          const verifyRes = await fetch(`${API_BASE_URL}/checkout/payment/verify`, {
-            method:  'POST',
+          // ✅ Payment succeeded — NOW create order in DB and verify
+          const verifyRes = await fetch(`${API_BASE_URL}/checkout/payment/verify-and-create`, {
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({
-              razorpay_order_id:   razorpayResponse.razorpay_order_id,
+            body: JSON.stringify({
+              razorpay_order_id: razorpayResponse.razorpay_order_id,
               razorpay_payment_id: razorpayResponse.razorpay_payment_id,
-              razorpay_signature:  razorpayResponse.razorpay_signature,
-              orderId
+              razorpay_signature: razorpayResponse.razorpay_signature,
+              orderData  // ✅ send full order data here
             })
           });
 
           const verifyData = await verifyRes.json();
-
-          if (!verifyData.success) {
-            throw new Error('Payment verification failed');
-          }
+          if (!verifyData.success) throw new Error('Payment verification failed');
 
           localStorage.setItem('cart', '[]');
           navigate('/order-success', {
             state: {
-              orderData:   verifyData.data,
-              orderNumber: orderNumber,
-              tracking:    verifyData.data.tracking
+              orderData: verifyData.data,
+              orderNumber: verifyData.data.orderNumber,
+              tracking: verifyData.data.tracking
             }
           });
         } catch (err) {
-          alert('Payment done but verification failed. Please contact support with Order #' + orderNumber);
+          alert('Payment done but order creation failed. Please contact support with payment ID: ' + razorpayResponse.razorpay_payment_id);
+          setProcessing(false);
         }
       },
 
-      // ✅ FIX: ondismiss is defined here inside options, before new Razorpay()
       modal: {
         ondismiss: () => {
-          if (paymentFailed) return; // failure handler already ran
+          if (paymentFailed) return;
+          // ✅ No DB entry exists — just reset and stay on page
           setProcessing(false);
-          const retry = window.confirm(
-            `Payment was cancelled. Your order #${orderNumber} is saved.\n\nClick OK to retry payment, or Cancel to go to Order History.`
-          );
-          if (retry) {
-            rzp.open();
-          } else {
-            navigate('/orders');
-          }
         }
       }
     };
 
-    // ✅ FIX: construct AFTER options is fully built
     const rzp = new window.Razorpay(options);
 
     rzp.on('payment.failed', (response) => {
       paymentFailed = true;
       setProcessing(false);
-      alert(`Payment failed: ${response.error.description}. Order #${orderNumber} is saved — retry from Order History.`);
+      alert(`Payment failed: ${response.error.description}. Please try again.`);
     });
 
     rzp.open();
 
-  }catch (error) {
+  } catch (error) {
     console.error('Order error:', error);
-    setProcessing(false); // ✅ always reset processing on any error
+    setProcessing(false);
     alert(error.message || 'Failed to place order. Please try again.');
-  } finally {
-    if (paymentMethod === 'cod') setProcessing(false);
   }
 };
     // ============================================

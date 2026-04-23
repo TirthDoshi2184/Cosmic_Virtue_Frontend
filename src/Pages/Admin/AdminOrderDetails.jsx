@@ -193,7 +193,7 @@ const AdminOrderDetail = () => {
           <div className="card">
             <div className="card-title">📍 Shipping Address</div>
             {[
-              ['Street', order.shippingAddress?.street],
+              ['Street', order.shippingAddress?.address],
               ['City', order.shippingAddress?.city],
               ['State', order.shippingAddress?.state],
               ['Pincode', order.shippingAddress?.pincode],
@@ -249,7 +249,7 @@ const AdminOrderDetail = () => {
             {[
               ['Method', order.paymentMethod?.toUpperCase()],
               ['Status', order.paymentStatus],
-              ['Paid At', order.paidAt ? new Date(order.paidAt).toLocaleDateString('en-IN') : 'Not yet'],
+              ['Order Date', order.orderDate ? new Date(order.orderDate).toLocaleDateString('en-IN') : 'Not yet'],
             ].map(([l, v]) => (
               <div className="detail-row" key={l}><span className="dl">{l}</span><span className="dv">{v || '—'}</span></div>
             ))}

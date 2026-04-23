@@ -297,11 +297,11 @@ const AdminOrders = () => {
                   ['Name', `${selectedOrder.contactInfo?.firstName} ${selectedOrder.contactInfo?.lastName}`],
                   ['Email', selectedOrder.contactInfo?.email],
                   ['Phone', selectedOrder.contactInfo?.phone],
-                  ['Address', `${selectedOrder.shippingAddress?.street}, ${selectedOrder.shippingAddress?.city}, ${selectedOrder.shippingAddress?.state} - ${selectedOrder.shippingAddress?.pincode}`],
+                  ['Address', `${selectedOrder.shippingAddress?.address}<br />${selectedOrder.shippingAddress?.city}, ${selectedOrder.shippingAddress?.state} - ${selectedOrder.shippingAddress?.pincode}`],
                 ].map(([l, v]) => (
                   <div className="detail-row" key={l}>
                     <span className="detail-label">{l}</span>
-                    <span className="detail-val">{v || '—'}</span>
+                    <span className="detail-val" dangerouslySetInnerHTML={{ __html: v || '—' }} />
                   </div>
                 ))}
 

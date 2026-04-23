@@ -35,7 +35,7 @@
     const [activeStep, setActiveStep] = useState(1);
     const [errors, setErrors] = useState({});
     const [savedAddresses, setSavedAddresses] = useState([]);
-    const [showSavedAddresses, setShowSavedAddresses] = useState(false);
+    // const [showSavedAddresses, setShowSavedAddresses] = useState(false);
     const [showOrderSummary, setShowOrderSummary] = useState(true);
 
     // Add these new state variables
@@ -218,9 +218,10 @@ const sendOTP = async () => {
   setVerifying(false);
 };
 // CHANGE: verifyOTP function
-    const verifyOTP = async () => {
+  const verifyOTP = async () => {
   if (SKIP_OTP) {
     setPhoneVerified(true);
+    await loadAddressesByPhone(contactInfo.phone);
     return;
   }
 
@@ -232,32 +233,25 @@ const sendOTP = async () => {
   setVerifying(true);
 
   try {
-    // Verify OTP with Firebase
     const userCredential = await confirmationResult.confirm(otp);
-
-    // Get Firebase token to send to your backend
     const firebaseToken = await userCredential.user.getIdToken();
 
-    // Verify token with your backend
     const response = await fetch(`${API_BASE_URL}/checkout/auth/verify-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        phone: contactInfo.phone,
-        firebaseToken,           // send token instead of otp
-      }),
+      body: JSON.stringify({ phone: contactInfo.phone, firebaseToken }),
     });
 
     const data = await response.json();
 
     if (data.success) {
       setPhoneVerified(true);
-      loadAddressesByPhone(contactInfo.phone);
+      // ✅ Load addresses right after verification
+      await loadAddressesByPhone(contactInfo.phone);
       alert('Phone verified successfully! ✓');
     } else {
       alert(data.message || 'Verification failed');
     }
-
   } catch (error) {
     console.error('OTP verify error:', error);
     alert('Invalid OTP. Please try again.');
@@ -268,19 +262,20 @@ const sendOTP = async () => {
     // CHANGE: Load addresses by phone
 const loadAddressesByPhone = async (phone) => {
   try {
-    // Try backend first
     const res = await fetch(`${API_BASE_URL}/checkout/addresses/${phone}`);
     const data = await res.json();
     if (data.success && data.data.length > 0) {
       setSavedAddresses(data.data);
+      return data.data;
     } else {
-      // Fallback to localStorage
       const key = `savedAddresses_${phone}`;
       const addresses = JSON.parse(localStorage.getItem(key) || "[]");
       setSavedAddresses(addresses);
+      return addresses;
     }
   } catch (error) {
     console.error("Error loading addresses:", error);
+    return [];
   }
 };
     // CHANGE: Save address with phone
@@ -530,37 +525,32 @@ setSavedAddresses(addresses);
     // STEP NAVIGATION
     // ============================================
     const handleNextStep = () => {
-      let newErrors = {};
+  let newErrors = {};
 
-      if (activeStep === 1) {
-        // ADD THIS CHECK:
-        if (!phoneVerified) {
-          alert("Please verify your phone number to continue");
-          return;
-        }
-        newErrors = validateContactInfo();
-      } else if (activeStep === 2) {
-        newErrors = { ...validateShippingAddress(), ...validateBillingAddress() };
+  if (activeStep === 1) {
+    if (!phoneVerified) {
+      alert("Please verify your phone number to continue");
+      return;
+    }
+    // ✅ No contact info validation here — phone is enough for step 1
+  } else if (activeStep === 2) {
+    // ✅ Validate contact info + address together on step 2
+    newErrors = { ...validateContactInfo(), ...validateShippingAddress(), ...validateBillingAddress() };
 
-        // REPLACE saveAddressToLocal with saveAddressWithPhone:
-        if (Object.keys(newErrors).length === 0 && saveAddress && phoneVerified) {
-          const addressToSave = {
-            ...contactInfo,
-            ...shippingAddress,
-          };
-          saveAddressWithPhone(addressToSave); // CHANGED THIS LINE
-        }
-      }
+    if (Object.keys(newErrors).length === 0 && saveAddress && phoneVerified) {
+      saveAddressWithPhone({ ...contactInfo, ...shippingAddress });
+    }
+  }
 
-      if (Object.keys(newErrors).length > 0) {
-        setErrors(newErrors);
-        return;
-      }
+  if (Object.keys(newErrors).length > 0) {
+    setErrors(newErrors);
+    return;
+  }
 
-      setErrors({});
-      setActiveStep(activeStep + 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    };
+  setErrors({});
+  setActiveStep(activeStep + 1);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
     const handlePreviousStep = () => {
       setActiveStep(activeStep - 1);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -570,12 +560,13 @@ setSavedAddresses(addresses);
     // LOAD SAVED ADDRESS
     // ============================================
     const loadSavedAddress = (address) => {
-      setContactInfo({
+      setContactInfo(prev=>({
+        ...prev,
         firstName: address.firstName || "",
         lastName: address.lastName || "",
         email: address.email || "",
         phone: address.phone || "",
-      });
+      }));
 
       setShippingAddress({
   address: address.address || "",
@@ -588,7 +579,7 @@ setSavedAddresses(addresses);
   landmark: address.landmark || "",
 });
 
-      setShowSavedAddresses(false);
+      // setShowSavedAddresses(false);
        if (address.pincode) {
     checkPincodeServiceability(address.pincode);
   }
@@ -961,6 +952,7 @@ setSavedAddresses(addresses);
                 </span>
               </div>
 
+
               {/* Step 2 */}
               <div className="flex flex-col items-center">
                 <div
@@ -1013,263 +1005,191 @@ setSavedAddresses(addresses);
             <div className="lg:col-span-2 space-y-6">
               {/* STEP 1: CONTACT INFORMATION */}
               {activeStep === 1 && (
-                <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 border border-purple-100">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="p-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg">
-                      <User className="w-5 h-5 text-white" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-gray-800">
-                      Contact Information
-                    </h2>
+  <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 border border-purple-100">
+    <div className="flex items-center gap-3 mb-6">
+      <div className="p-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg">
+        <Phone className="w-5 h-5 text-white" />
+      </div>
+      <h2 className="text-2xl font-bold text-gray-800">Verify Your Phone</h2>
+    </div>
+
+    <div className="space-y-4">
+      {/* Phone Number */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">
+          Phone Number *{" "}
+          {phoneVerified && <span className="text-green-600 ml-2">✓ Verified</span>}
+        </label>
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="tel"
+              value={contactInfo.phone}
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, "").slice(0, 10);
+                setContactInfo({ ...contactInfo, phone: val });
+                setPhoneVerified(false);
+                setOtpSent(false);
+                setSavedAddresses([]);
+              }}
+              disabled={!SKIP_OTP && phoneVerified}
+              className={`w-full pl-10 pr-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
+                phoneVerified ? "border-green-500 bg-green-50" : errors.phone ? "border-red-500" : "border-gray-200"
+              }`}
+              placeholder="9876543210"
+              maxLength="10"
+            />
+          </div>
+          {!phoneVerified && (
+            <button
+              onClick={sendOTP}
+              disabled={verifying || !contactInfo.phone || !/^[0-9]{10}$/.test(contactInfo.phone)}
+              className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {verifying ? <Loader2 className="w-5 h-5 animate-spin" /> : otpSent ? "Resend" : "Send OTP"}
+            </button>
+          )}
+        </div>
+        {errors.phone && (
+          <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+            <AlertCircle className="w-3 h-3" /> {errors.phone}
+          </p>
+        )}
+      </div>
+
+      {/* OTP Input */}
+      {otpSent && !phoneVerified && (
+        <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Enter OTP</label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              className="flex-1 px-4 py-3 border-2 border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="Enter 6-digit OTP"
+              maxLength="6"
+            />
+            <button
+              onClick={verifyOTP}
+              disabled={verifying || otp.length !== 6}
+              className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-lg disabled:opacity-50"
+            >
+              {verifying ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verify"}
+            </button>
+          </div>
+          <p className="text-xs text-purple-700 mt-2">OTP sent to +91 {contactInfo.phone}. Valid for 5 minutes.</p>
+        </div>
+      )}
+
+      {/* ✅ Saved Addresses — shown inline after phone verification */}
+      {phoneVerified && savedAddresses.length > 0 && (
+        <div className="mt-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Bookmark className="w-4 h-4 text-purple-600" />
+            <p className="text-sm font-semibold text-gray-700">
+              Select a saved address or continue to fill manually
+            </p>
+          </div>
+          <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+            {savedAddresses.map((addr) => (
+              <div
+                key={addr._id || addr.id}
+                onClick={() => {
+                  loadSavedAddress(addr);
+                  // Also fill contact name/email if missing
+                  setContactInfo(prev => ({
+                    ...prev,
+                    firstName: prev.firstName || addr.firstName || "",
+                    lastName: prev.lastName || addr.lastName || "",
+                    email: prev.email || addr.email || "",
+                  }));
+                  // Skip to step 2 directly
+                  setErrors({});
+                  setActiveStep(2);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                className="p-4 border-2 border-gray-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 cursor-pointer transition-all group"
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-semibold text-gray-800">
+                      {addr.firstName} {addr.lastName}
+                      {addr.isDefault && (
+                        <span className="ml-2 text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">Default</span>
+                      )}
+                    </p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {addr.address}{addr.apartment ? `, ${addr.apartment}` : ""}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {addr.city}, {addr.state} - {addr.pincode}
+                    </p>
+                    {addr.landmark && (
+                      <p className="text-xs text-gray-500 mt-0.5">Near: {addr.landmark}</p>
+                    )}
                   </div>
-
-                  <div className="space-y-4">
-  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-    <div>
-      <label className="block text-sm font-semibold text-gray-700 mb-2">
-        First Name *
-      </label>
-      <div className="relative">
-        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-        <input
-          type="text"
-          value={contactInfo.firstName}
-          onChange={(e) =>
-            setContactInfo({ ...contactInfo, firstName: e.target.value })
-          }
-          className={`w-full pl-10 pr-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
-            errors.firstName ? "border-red-500" : "border-gray-200"
-          }`}
-          placeholder="John"
-        />
-      </div>
-      {errors.firstName && (
-        <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-          <AlertCircle className="w-3 h-3" /> {errors.firstName}
-        </p>
-      )}
-    </div>
-
-    <div>
-      <label className="block text-sm font-semibold text-gray-700 mb-2">
-        Last Name *
-      </label>
-      <div className="relative">
-        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-        <input
-          type="text"
-          value={contactInfo.lastName}
-          onChange={(e) =>
-            setContactInfo({ ...contactInfo, lastName: e.target.value })
-          }
-          className={`w-full pl-10 pr-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
-            errors.lastName ? "border-red-500" : "border-gray-200"
-          }`}
-          placeholder="Doe"
-        />
-      </div>
-      {errors.lastName && (
-        <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-          <AlertCircle className="w-3 h-3" /> {errors.lastName}
-        </p>
-      )}
-    </div>
-  </div>
-
-  {/* Email Address - plain input, no OTP */}
-  <div>
-    <label className="block text-sm font-semibold text-gray-700 mb-2">
-      Email Address *
-    </label>
-    <div className="relative">
-      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-      <input
-        type="email"
-        value={contactInfo.email}
-        onChange={(e) =>
-          setContactInfo({ ...contactInfo, email: e.target.value })
-        }
-        className={`w-full pl-10 pr-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
-          errors.email ? "border-red-500" : "border-gray-200"
-        }`}
-        placeholder="your.email@example.com"
-      />
-    </div>
-    {errors.email && (
-      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-        <AlertCircle className="w-3 h-3" /> {errors.email}
-      </p>
-    )}
-  </div>
-
-  {/* Phone Number - OTP verification via MSG91 */}
-  <div>
-    <label className="block text-sm font-semibold text-gray-700 mb-2">
-      Phone Number *{" "}
-      {phoneVerified && (
-        <span className="text-green-600 ml-2">✓ Verified</span>
-      )}
-    </label>
-    <div className="flex gap-2">
-      <div className="relative flex-1">
-        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-        <input
-          type="tel"
-          value={contactInfo.phone}
-          onChange={(e) => {
-            const val = e.target.value.replace(/\D/g, "").slice(0, 10);
-            setContactInfo({ ...contactInfo, phone: val });
-            setPhoneVerified(false);
-            setOtpSent(false);
-          }}
-          disabled={!SKIP_OTP && phoneVerified}
-          className={`w-full pl-10 pr-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
-            phoneVerified
-              ? "border-green-500 bg-green-50"
-              : errors.phone
-              ? "border-red-500"
-              : "border-gray-200"
-          }`}
-          placeholder="9876543210"
-          maxLength="10"
-        />
-      </div>
-
-      {!phoneVerified && (
-        <button
-          onClick={sendOTP}
-          disabled={
-            verifying ||
-            !contactInfo.phone ||
-            !/^[0-9]{10}$/.test(contactInfo.phone)
-          }
-          className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {verifying ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : otpSent ? (
-            "Resend OTP"
-          ) : (
-            "Send OTP"
-          )}
-        </button>
-      )}
-    </div>
-    {errors.phone && (
-      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-        <AlertCircle className="w-3 h-3" /> {errors.phone}
-      </p>
-    )}
-  </div>
-
-  {/* OTP Input Box - shown after Send OTP */}
-  {otpSent && !phoneVerified && (
-    <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
-      <label className="block text-sm font-semibold text-gray-700 mb-2">
-        Enter OTP
-      </label>
-      <div className="flex gap-2">
-        <input
-          type="text"
-          value={otp}
-          onChange={(e) =>
-            setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
-          }
-          className="flex-1 px-4 py-3 border-2 border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-          placeholder="Enter 6-digit OTP"
-          maxLength="6"
-        />
-        <button
-          onClick={verifyOTP}
-          disabled={verifying || otp.length !== 6}
-          className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {verifying ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            "Verify"
-          )}
-        </button>
-      </div>
-      <p className="text-xs text-purple-700 mt-2">
-        OTP sent to +91 {contactInfo.phone}. Valid for 5 minutes.
-      </p>
-    </div>
-  )}
-</div>
-
-<div className="mt-8">
-  <button
-    onClick={handleNextStep}
-    disabled={!phoneVerified}
-    className="w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-  >
-    {!phoneVerified ? (
-      <>
-        <Lock className="w-5 h-5" />
-        Verify Phone to Continue
-      </>
-    ) : (
-      <>
-        Continue to Shipping
-        <ChevronRight className="w-5 h-5" />
-      </>
-    )}
-  </button>
-</div>
+                  <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-purple-500 mt-1 flex-shrink-0" />
                 </div>
-              )}
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-3 text-center">
+            <button
+              onClick={() => {
+                setErrors({});
+                setActiveStep(2);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              className="text-sm text-purple-600 underline hover:text-purple-800"
+            >
+              + Use a different address
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* If verified but no saved addresses */}
+      {phoneVerified && savedAddresses.length === 0 && (
+        <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+          ✓ Phone verified! Please fill in your details below to continue.
+        </div>
+      )}
+    </div>
+
+    {/* Continue button — only show if no saved addresses (otherwise user picks from list) */}
+    {phoneVerified && savedAddresses.length === 0 && (
+      <div className="mt-8">
+        <button
+          onClick={handleNextStep}
+          className="w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all duration-300 shadow-lg flex items-center justify-center gap-2"
+        >
+          Continue to Address
+          <ChevronRight className="w-5 h-5" />
+        </button>
+      </div>
+    )}
+
+    {!phoneVerified && (
+      <div className="mt-8">
+        <button
+          disabled
+          className="w-full py-4 bg-gray-200 text-gray-500 font-semibold rounded-xl flex items-center justify-center gap-2 cursor-not-allowed"
+        >
+          <Lock className="w-5 h-5" />
+          Verify Phone to Continue
+        </button>
+      </div>
+    )}
+  </div>
+)}
 
               {/* STEP 2: SHIPPING & BILLING ADDRESS */}
               {activeStep === 2 && (
                 <div className="space-y-6">
-                  {/* Saved Addresses */}
-                  {savedAddresses.length > 0 && (
-                    <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 border border-purple-100">
-                      <button
-                        onClick={() => setShowSavedAddresses(!showSavedAddresses)}
-                        className="w-full flex items-center justify-between"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg">
-                            <Bookmark className="w-5 h-5 text-white" />
-                          </div>
-                          <h2 className="text-2xl font-bold text-gray-800">
-                            Saved Addresses
-                          </h2>
-                        </div>
-                        {showSavedAddresses ? (
-                          <ChevronUp className="w-6 h-6 text-gray-600" />
-                        ) : (
-                          <ChevronDown className="w-6 h-6 text-gray-600" />
-                        )}
-                      </button>
-
-                      {showSavedAddresses && (
-                        <div className="mt-4 space-y-3">
-                          {savedAddresses.map((addr) => (
-                            <div
-                              key={addr.id}
-                              onClick={() => loadSavedAddress(addr)}
-                              className="p-4 border-2 border-gray-200 rounded-lg hover:border-purple-500 cursor-pointer transition-all"
-                            >
-                              <p className="font-semibold text-gray-800">
-                                {addr.firstName} {addr.lastName}
-                              </p>
-                              <p className="text-sm text-gray-600 mt-1">
-                                {addr.address}, {addr.city}, {addr.state} -{" "}
-                                {addr.pincode}
-                              </p>
-                              <p className="text-xs text-gray-500 mt-1">
-                                {addr.phone}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
+      
                   {/* Shipping Address */}
                   <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 border border-purple-100">
                     <div className="flex items-center gap-3 mb-6">
@@ -1282,6 +1202,51 @@ setSavedAddresses(addresses);
                     </div>
 
                     <div className="space-y-4">
+                              {/* Contact details — collected here if not auto-filled from saved address */}
+<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  <div>
+    <label className="block text-sm font-semibold text-gray-700 mb-2">First Name *</label>
+    <div className="relative">
+      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+      <input
+        type="text"
+        value={contactInfo.firstName}
+        onChange={(e) => setContactInfo({ ...contactInfo, firstName: e.target.value })}
+        className={`w-full pl-10 pr-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 ${errors.firstName ? "border-red-500" : "border-gray-200"}`}
+        placeholder="John"
+      />
+    </div>
+    {errors.firstName && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.firstName}</p>}
+  </div>
+  <div>
+    <label className="block text-sm font-semibold text-gray-700 mb-2">Last Name *</label>
+    <div className="relative">
+      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+      <input
+        type="text"
+        value={contactInfo.lastName}
+        onChange={(e) => setContactInfo({ ...contactInfo, lastName: e.target.value })}
+        className={`w-full pl-10 pr-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 ${errors.lastName ? "border-red-500" : "border-gray-200"}`}
+        placeholder="Doe"
+      />
+    </div>
+    {errors.lastName && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.lastName}</p>}
+  </div>
+</div>
+<div>
+  <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address *</label>
+  <div className="relative">
+    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+    <input
+      type="email"
+      value={contactInfo.email}
+      onChange={(e) => setContactInfo({ ...contactInfo, email: e.target.value })}
+      className={`w-full pl-10 pr-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 ${errors.email ? "border-red-500" : "border-gray-200"}`}
+      placeholder="your.email@example.com"
+    />
+  </div>
+  {errors.email && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.email}</p>}
+</div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                           Street Address *

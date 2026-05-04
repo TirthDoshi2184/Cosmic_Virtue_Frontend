@@ -411,9 +411,9 @@ const AboutUs = () => {
                 "Cosmic Virtue candles have completely transformed the ambience of my home. The fragrance, the quality, the packaging — everything feels so intentional and special."
               </blockquote>
               <div className="flex items-center justify-center gap-3">
-                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">SJ</div>
+                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">NS</div>
                 <div className="text-left">
-                  <p className="font-semibold text-gray-900 text-sm">Sarah Johnson</p>
+                  <p className="font-semibold text-gray-900 text-sm">Nishit Soneji</p>
                   <p className="text-gray-400 text-xs">✓ Verified Customer</p>
                 </div>
               </div>

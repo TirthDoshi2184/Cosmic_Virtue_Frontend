@@ -57,7 +57,7 @@ const ContactUs = () => {
       icon: <MapPin className="w-5 h-5" />,
       label: 'Our Studio',
       value: 'Ahmedabad, Gujarat',
-      sub: 'India – 380001',
+      sub: 'India – 380007',
       href: '#',
     },
     {

@@ -38,6 +38,7 @@ import AdminRegister from "./Pages/Admin/AdminRegister";
 import AdminOrderDetail from "./Pages/Admin/AdminOrderDetails";
 import AdminLayout from "./Pages/Admin/AdminSidebar";
 import RefundPolicy from "./Pages/Refund_Policy";
+import FAQ from "./Pages/Faqs";
 
 // ScrollToTop Component
 function ScrollToTop() {
@@ -90,6 +91,7 @@ function App() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/order-success" element={<OrderHistoryPage />} />
         <Route path="/refund" element={<RefundPolicy/>} />
+        <Route path="faq" element={<FAQ />} />
 
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin/register" element={

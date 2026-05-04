@@ -410,7 +410,7 @@ const PrivacyPolicy = () => {
                 </p>
                 <div className="flex items-center gap-4">
                   <button
-                    onClick={() => navigate('/terms')}
+                    onClick={() => navigate('/term')}
                     className="text-xs text-purple-500 hover:text-purple-700 transition-colors"
                     style={{ fontFamily: "'Montserrat', sans-serif" }}
                   >

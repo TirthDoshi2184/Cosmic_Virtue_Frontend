@@ -60,7 +60,7 @@ const sections = [
     ],
     highlight: {
       label: 'How to Raise a Return',
-      text: 'To initiate a return, email us at support@cosmicvirtues.com within 7 days of receiving your order with your order number and photos of the issue. Our team will respond within 48 hours.',
+      text: 'To initiate a return, email us at cosmicvirtue07@gmail.com within 7 days of receiving your order with your order number and photos of the issue. Our team will respond within 48 hours.',
     },
   },
 ];
@@ -231,12 +231,12 @@ const RefundPolicy = () => {
               <div className="mt-6 pt-5 border-t border-gray-100">
                 <p className="text-xs text-gray-400 mb-2" style={{ fontFamily: "'Montserrat', sans-serif" }}>Need help with a return?</p>
                 <a
-                  href="mailto:support@cosmicvirtues.com"
+                  href="mailto:cosmicvirtue07@gmail.com"
                   className="flex items-center gap-2 text-purple-600 text-xs font-medium hover:text-purple-800 transition-colors"
                   style={{ fontFamily: "'Montserrat', sans-serif" }}
                 >
                   <Mail className="w-3.5 h-3.5" />
-                  support@cosmicvirtues.com
+                  cosmicvirtue07@gmail.com
                 </a>
               </div>
             </div>
@@ -380,7 +380,7 @@ const RefundPolicy = () => {
                   </div>
                   <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">
                     <a
-                      href="mailto:support@cosmicvirtues.com"
+                      href="mailto:cosmicvirtue07@gmail.com"
                       className="flex items-center gap-2 bg-white text-purple-700 px-7 py-3.5 rounded-xl font-semibold text-sm tracking-wide hover:bg-purple-50 transition-all duration-300 shadow-lg whitespace-nowrap"
                       style={{ fontFamily: "'Montserrat', sans-serif" }}
                     >

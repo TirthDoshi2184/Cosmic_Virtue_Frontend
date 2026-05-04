@@ -125,23 +125,41 @@ const [verifying, setVerifying] = useState(false);
     setMessage({ type: 'error', text: 'Enter valid 10-digit number' });
     return;
   }
+
   setVerifying(true);
+
   try {
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container-login', {
+    // 🔥 CLEAR OLD INSTANCE
+    if (window.recaptchaVerifier) {
+      window.recaptchaVerifier.clear();
+      window.recaptchaVerifier = null;
+    }
+
+    // 🔥 CREATE NEW
+    window.recaptchaVerifier = new RecaptchaVerifier(
+      'recaptcha-container-login',
+      {
         size: 'invisible',
         callback: () => {},
-      });
-      await window.recaptchaVerifier.render();
-    }
-    const result = await signInWithPhoneNumber(auth, `+91${phoneData.phone}`, window.recaptchaVerifier);
+      },
+      auth
+    );
+
+    const result = await signInWithPhoneNumber(
+      auth,
+      `+91${phoneData.phone}`,
+      window.recaptchaVerifier
+    );
+
     setConfirmationResult(result);
     setOtpSent(true);
     setMessage({ type: 'success', text: 'OTP sent!' });
+
   } catch (err) {
-    if (window.recaptchaVerifier) { window.recaptchaVerifier.clear(); window.recaptchaVerifier = null; }
+    console.log(err);
     setMessage({ type: 'error', text: 'Failed to send OTP. Try again.' });
   }
+
   setVerifying(false);
 };
 
@@ -280,7 +298,7 @@ const handlePhoneLogin = async () => {
               </div>
             )}
 
-<div id="recaptcha-container-login">
+
             {/* Login Form */}
            {loginMode === 'email' && (
 <form onSubmit={handleSubmit} className="space-y-6">
@@ -452,8 +470,7 @@ const handlePhoneLogin = async () => {
   </div>
 )}
 
-            
-
+<div id="recaptcha-container-login"></div>
             {/* Divider */}
             <div className="relative my-8">
               <div className="absolute inset-0 flex items-center">
@@ -476,12 +493,12 @@ const handlePhoneLogin = async () => {
                 Join our community and start your botanical journey
               </p>
             </div>
-          </div>
+
         </div>
       </div>
 </div>
       {/* Footer */}
-      <div id="recaptcha-container-login"></div>
+      
       {/* Custom animations */}
       <style jsx>{`
         @keyframes slideDown {

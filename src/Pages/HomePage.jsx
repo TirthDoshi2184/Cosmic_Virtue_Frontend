@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 
 const HomePage = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [summerSaleProducts, setSummerSaleProducts] = useState([]);
+const [summerSaleLoading, setSummerSaleLoading] = useState(true);
 
   const slides = [
     {
@@ -56,19 +58,22 @@ useEffect(() => {
       const [newArrivalsRes, bestSellersRes, categoriesRes] = await Promise.all([
         fetch(`${import.meta.env.VITE_API_URL}/products/new-arrivals`),
         fetch(`${import.meta.env.VITE_API_URL}/products/best-sellers`),
-        fetch(`${import.meta.env.VITE_API_URL}/categories?activeOnly=true`)
+        fetch(`${import.meta.env.VITE_API_URL}/categories?activeOnly=true`),
+        fetch(`${import.meta.env.VITE_API_URL}/products/summer-sale`)
       ]);
 
-      const [newArrivalsData, bestSellersData, categoriesData] = await Promise.all([
+      const [newArrivalsData, bestSellersData, categoriesData, summerSaleData] = await Promise.all([
         newArrivalsRes.json(),
         bestSellersRes.json(),
-        categoriesRes.json()
+        categoriesRes.json(),
+        summerSaleRes.json()
       ]);
-      console.log("fetched data:", newArrivalsData, bestSellersData, categoriesData);
-      
+      console.log("fetched data:", newArrivalsData, bestSellersData, categoriesData, summerSaleData);
+
       if (newArrivalsData.data) setNewArrivals(newArrivalsData.data);
       if (bestSellersData.data) setBestSellers(bestSellersData.data);
       if (categoriesData.data) setCategories(categoriesData.data);
+      if (summerSaleData.data) setSummerSaleProducts(summerSaleData.data);
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -225,6 +230,47 @@ useEffect(() => {
           min-height: 100vh;
           background-attachment: fixed;
         }
+
+        /* Summer Sale */
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+@keyframes floatSun {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50%       { transform: translateY(-6px) rotate(10deg); }
+}
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 25px rgba(251,191,36,0.35); }
+  50%       { box-shadow: 0 0 50px rgba(251,191,36,0.7), 0 0 80px rgba(251,191,36,0.2); }
+}
+.summer-sale-section { animation: pulseGlow 2.5s ease-in-out infinite; }
+.summer-card-home {
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+.summer-card-home:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 50px rgba(251,191,36,0.28);
+}
+.summer-card-home .s-img { transition: transform 0.6s ease; }
+.summer-card-home:hover .s-img { transform: scale(1.08); }
+.summer-quick-add-home {
+  opacity: 0;
+  transform: translateY(5px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.summer-card-home:hover .summer-quick-add-home {
+  opacity: 1;
+  transform: translateY(0);
+}
+.shimmer-badge {
+  background: linear-gradient(90deg, #f59e0b, #ef4444, #f97316, #ef4444, #f59e0b);
+  background-size: 200% auto;
+  animation: shimmer 2.5s linear infinite;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
       `}</style>
 
       {/* ══════════════════════════════════════
@@ -370,6 +416,198 @@ useEffect(() => {
           .animate-marquee { animation: marquee 22s linear infinite; }
         `}</style>
       </div>
+
+      {/* ══════════════════════════════════════
+    ☀️ SUMMER SALE SECTION
+══════════════════════════════════════ */}
+{!summerSaleLoading && summerSaleProducts.length > 0 && (
+  <section className="py-14 sm:py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 overflow-hidden relative">
+
+    {/* Background decorative blobs */}
+    <div className="absolute -top-20 -right-20 w-72 h-72 bg-yellow-200/40 rounded-full blur-3xl pointer-events-none" />
+    <div className="absolute -bottom-20 -left-20 w-72 h-72 bg-orange-200/40 rounded-full blur-3xl pointer-events-none" />
+    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-32 bg-red-100/30 rounded-full blur-3xl pointer-events-none" />
+
+    <div className="max-w-7xl mx-auto relative">
+
+      {/* ── HEADER BANNER ── */}
+      <div className="summer-sale-section relative overflow-hidden rounded-3xl bg-gradient-to-r from-amber-400 via-orange-400 to-red-500 p-7 sm:p-10 mb-10">
+        {/* Inner glow blobs */}
+        <div className="absolute -top-10 -right-10 w-52 h-52 bg-yellow-300/25 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute -bottom-8 left-10 w-40 h-40 bg-red-300/25 rounded-full blur-2xl pointer-events-none" />
+
+        <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+          {/* Left text */}
+          <div>
+            <div className="flex items-center gap-2 mb-3 flex-wrap">
+              <span style={{ animation: 'floatSun 2s ease-in-out infinite', display: 'inline-block', fontSize: '1.75rem' }}>☀️</span>
+              <span className="bg-white/25 backdrop-blur-sm text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest border border-white/30">
+                Limited Time Only
+              </span>
+              <span className="bg-red-700 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest animate-pulse flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping inline-block" />
+                Live Now
+              </span>
+            </div>
+
+            <h2
+              className="text-4xl sm:text-5xl font-black text-white mb-2 leading-tight"
+              style={{ fontFamily: "'Playfair Display', serif", textShadow: '0 3px 12px rgba(0,0,0,0.2)' }}
+            >
+              ☀️ Summer Sale
+            </h2>
+            <p className="text-white/90 text-sm sm:text-base font-medium max-w-md">
+              Exclusive deals on our bestsellers —{' '}
+              <span className="font-black text-yellow-200 text-lg">up to 50% OFF</span>
+              {' '}on handcrafted candles & bath essentials
+            </p>
+          </div>
+
+          {/* Right — stats block */}
+          <div className="flex gap-3 flex-shrink-0">
+            <div className="bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl px-5 py-4 text-center">
+              <p className="text-white/75 text-[10px] font-semibold uppercase tracking-wider mb-0.5">Deals</p>
+              <p className="text-white font-black text-2xl leading-none">{summerSaleProducts.length}+</p>
+              <p className="text-white/75 text-[10px] mt-0.5">Products</p>
+            </div>
+            <div className="bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl px-5 py-4 text-center">
+              <p className="text-white/75 text-[10px] font-semibold uppercase tracking-wider mb-0.5">Save up to</p>
+              <p className="text-white font-black text-2xl leading-none">50%</p>
+              <p className="text-white/75 text-[10px] mt-0.5">🔥 Hot Picks</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Decorative wavy bottom edge */}
+        <svg
+          className="absolute bottom-0 left-0 right-0 w-full"
+          viewBox="0 0 1440 20" preserveAspectRatio="none" height="20"
+          style={{ fill: 'rgba(255,255,255,0.08)' }}
+        >
+          <path d="M0,10 C360,20 1080,0 1440,10 L1440,20 L0,20 Z" />
+        </svg>
+      </div>
+
+      {/* ── PRODUCT CARDS ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-5">
+        {summerSaleProducts.map((product) => (
+          <div
+            key={product._id}
+            onClick={() => navigate(`/product/${product._id}`)}
+            className="summer-card-home bg-white rounded-2xl overflow-hidden shadow-md cursor-pointer border-2 border-amber-100 hover:border-amber-300 transition-colors"
+          >
+            {/* Image */}
+            <div
+              className="relative overflow-hidden bg-gradient-to-br from-amber-50 to-orange-50"
+              style={{ aspectRatio: '1/1' }}
+            >
+              <img
+                src={Array.isArray(product.img) ? product.img[0] : product.img}
+                alt={product.name}
+                className="s-img w-full h-full object-contain object-center"
+                onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1602874801006-64c78b297c86?w=400&h=400&fit=crop'; }}
+              />
+
+              {/* Sale % badge */}
+              {product.salePercentage && (
+                <div className="absolute top-2 left-2 z-10">
+                  <span className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-2 py-1 rounded-full text-xs font-black shadow-lg">
+                    🔥 -{product.salePercentage}%
+                  </span>
+                </div>
+              )}
+
+              {/* Wishlist */}
+              <button
+                onClick={(e) => handleAddToWishlist(product, e)}
+                className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow-md opacity-0 group-hover:opacity-100 hover:bg-white transition-all"
+                style={{ opacity: undefined }} // let CSS handle
+              >
+                <Heart className="w-3 h-3 text-gray-500 hover:text-red-500 transition-colors" />
+              </button>
+
+              {/* Quick Add — desktop hover */}
+              <div className="summer-quick-add-home absolute bottom-0 left-0 right-0 hidden sm:block">
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleAddToCart(product, e); }}
+                  className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs uppercase tracking-widest py-2.5 font-semibold flex items-center justify-center gap-1.5 transition-all"
+                >
+                  <ShoppingCart className="w-3 h-3" /> Add
+                </button>
+              </div>
+            </div>
+
+            {/* Info */}
+            <div className="p-2.5 sm:p-3">
+              <p className="text-[10px] text-amber-500 uppercase tracking-wider font-semibold mb-0.5 truncate">
+                {product.category?.name || 'Sale'}
+              </p>
+              <h3
+                className="text-sm font-semibold text-gray-900 mb-2 line-clamp-2 leading-snug"
+                style={{ fontFamily: "'Playfair Display', serif" }}
+              >
+                {product.name}
+              </h3>
+
+              {/* Stars */}
+              <div className="flex items-center gap-0.5 mb-2">
+                {[1,2,3,4,5].map(s => (
+                  <Star key={s} className={`w-2.5 h-2.5 ${s <= Math.round(product.rating || 4.5) ? 'fill-yellow-400 text-yellow-400' : 'fill-gray-200 text-gray-200'}`} />
+                ))}
+              </div>
+
+              {/* Price block */}
+              <div className="mb-2.5">
+                <div className="flex items-baseline gap-1.5 flex-wrap">
+                  {/* Offer price — bold red */}
+                  <span
+                    className="text-base font-black text-red-600"
+                    style={{ fontFamily: "'Montserrat', sans-serif" }}
+                  >
+                    ₹{product.offerPrice || product.price}
+                  </span>
+                  {/* Original price — struck through */}
+                  {product.price && product.offerPrice && product.offerPrice !== product.price && (
+                    <span className="text-xs text-gray-400 line-through font-medium">
+                      ₹{product.price}
+                    </span>
+                  )}
+                </div>
+                {/* Savings pill */}
+                {product.offerPrice && product.price && product.offerPrice < product.price && (
+                  <span className="inline-flex items-center gap-0.5 bg-green-50 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-green-200 mt-1">
+                    Save ₹{product.price - product.offerPrice}
+                  </span>
+                )}
+              </div>
+
+              {/* Mobile add button */}
+              <button
+                onClick={(e) => { e.stopPropagation(); handleAddToCart(product, e); }}
+                className="sm:hidden w-full py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm"
+              >
+                <ShoppingCart className="w-3 h-3" /> Add to Cart
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Bottom CTA ── */}
+      <div className="flex justify-center mt-10">
+        <button
+          onClick={() => navigate('/products')}
+          className="group flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-10 py-4 rounded-xl font-semibold text-sm tracking-wide uppercase transition-all shadow-lg hover:shadow-xl hover:shadow-orange-200"
+          style={{ fontFamily: "'Montserrat', sans-serif" }}
+        >
+          Shop All Sale Items
+          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+        </button>
+      </div>
+
+    </div>
+  </section>
+)}
 
       {/* ══════════════════════════════════════
           COLLECTIONS SECTION

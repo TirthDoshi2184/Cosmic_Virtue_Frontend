@@ -172,14 +172,21 @@ navigate('/checkout');
           throw new Error('Product not found');
         }
         const data = await response.json();
-        setProduct(data.data);
-        setError(null);
-      } catch (err) {
-        setError(err.message);
-        setProduct(null);
-      } finally {
-        setLoading(false);
-      }
+           // ── Normalize pricing ──
+    const raw = data.data;
+    const normalized = {
+      ...raw,
+      originalPrice: raw.isSummerSale && raw.offerPrice ? raw.price : null,
+      price: raw.isSummerSale && raw.offerPrice ? raw.offerPrice : raw.price,
+    };
+
+    setProduct(normalized);
+    setError(null);
+  } catch (err) {
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
     };
     if (id) {
       fetchProduct();
@@ -197,11 +204,13 @@ const related = data.data
   .map(p => ({
     id: p._id,
     name: p.name,
-    price: p.price,
+    // ADD THESE TWO LINES (replace the existing price line):
+    price: p.isSummerSale && p.offerPrice ? p.offerPrice : p.price,
+    originalPrice: p.isSummerSale && p.offerPrice ? p.price : null,
     image: Array.isArray(p.img) ? p.img[0] : p.img,
     rating: p.rating || 4.5
   }));
-        setRelatedProducts(related);
+          setRelatedProducts(related);
       } catch (err) {
         console.error('Error fetching related products:', err);
       }
@@ -459,12 +468,22 @@ className="w-full h-full object-contain p-1"
             </div>
 
             {/* Price */}
-            <div className="flex items-baseline gap-3 mb-6 pb-6 border-b border-purple-100">
-              <span className="text-4xl font-bold text-gray-900" style={{ fontFamily: "'Montserrat', sans-serif" }}>
-                ₹{product.price}
-              </span>
-              <span className="text-xs text-gray-400 uppercase tracking-wider">Tax included</span>
-            </div>
+<div className="flex items-baseline gap-3 mb-6 pb-6 border-b border-purple-100">
+  <span className="text-4xl font-bold text-gray-900" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+    ₹{product.price}
+  </span>
+  {product.originalPrice && (
+    <span className="text-xl text-gray-400 line-through font-medium">
+      ₹{product.originalPrice}
+    </span>
+  )}
+  {product.originalPrice && (
+    <span className="bg-red-100 text-red-600 text-sm font-bold px-2.5 py-1 rounded-full">
+      {product.salePercentage}% OFF
+    </span>
+  )}
+  <span className="text-xs text-gray-400 uppercase tracking-wider">Tax included</span>
+</div>
 
             {/* Short description */}
             {product.description && (
@@ -718,7 +737,15 @@ className="w-full h-full object-contain p-2"
                       <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
                       <span className="text-xs text-gray-500 font-medium">{item.rating}</span>
                     </div>
-                    <span className="text-base font-bold text-gray-900">₹{item.price}</span>
+<div className="flex items-baseline gap-1.5 flex-wrap">
+  <span className="text-base font-bold text-gray-900">₹{item.price}</span>
+  {item.originalPrice && (
+    <span className="text-xs text-gray-400 line-through">₹{item.originalPrice}</span>
+  )}
+  {item.originalPrice && (
+    <span className="text-[10px] font-bold text-red-500">SALE</span>
+  )}
+</div>
                   </div>
                 </div>
               ))}

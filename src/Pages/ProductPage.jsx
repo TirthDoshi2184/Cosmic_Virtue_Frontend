@@ -64,8 +64,8 @@ useEffect(() => {
       const transformedProducts = data.data.map(product => ({
         id: product._id,
         name: product.name,
-        price: product.price,
-        originalPrice: product.originalPrice || null,
+        price: product.isSummerSale && product.offerPrice ? product.offerPrice : product.price,
+originalPrice: product.isSummerSale && product.offerPrice ? product.price : (product.originalPrice || null),
         discount: product.discount || null,
         description: product.description,
         image: Array.isArray(product.img) ? product.img[0] : (product.img || 'https://images.unsplash.com/photo-1602874801006-64c78b297c86?w=400&h=400&fit=crop'),

@@ -2,12 +2,15 @@ import React, { useState, useEffect, useCallback } from 'react';
 
 const StatusBadge = ({ status }) => {
   const colors = {
-    pending:    { bg: '#fef3c7', text: '#92400e', dot: '#f59e0b' },
-    confirmed:  { bg: '#dbeafe', text: '#1e40af', dot: '#3b82f6' },
-    processing: { bg: '#e0e7ff', text: '#3730a3', dot: '#6366f1' },
-    shipped:    { bg: '#d1fae5', text: '#065f46', dot: '#10b981' },
-    delivered:  { bg: '#d1fae5', text: '#065f46', dot: '#059669' },
-    cancelled:  { bg: '#fee2e2', text: '#991b1b', dot: '#ef4444' },
+    pending:      { bg: '#fef3c7', text: '#92400e', dot: '#f59e0b' },
+    confirmed:    { bg: '#dbeafe', text: '#1e40af', dot: '#3b82f6' },
+    processing:   { bg: '#e0e7ff', text: '#3730a3', dot: '#6366f1' },
+    shipped:      { bg: '#d1fae5', text: '#065f46', dot: '#10b981' },
+    delivered:    { bg: '#d1fae5', text: '#065f46', dot: '#059669' },
+    cancelled:    { bg: '#fee2e2', text: '#991b1b', dot: '#ef4444' },
+    ndr:          { bg: '#fef3c7', text: '#92400e', dot: '#f59e0b' },
+    rto:          { bg: '#fee2e2', text: '#991b1b', dot: '#ef4444' },
+    rto_complete: { bg: '#fee2e2', text: '#991b1b', dot: '#ef4444' },
   };
   const c = colors[status] || { bg: '#f3f4f6', text: '#6b7280', dot: '#9ca3af' };
   return (
@@ -31,6 +34,12 @@ const AdminOrders = () => {
   const [newStatus, setNewStatus] = useState('');
   const [notifyCustomer, setNotifyCustomer] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
+
+  // Shipment status panel state
+  const [shipmentStatus, setShipmentStatus] = useState(null);
+  const [refreshingStatus, setRefreshingStatus] = useState(false);
+  const [fetchingLabel, setFetchingLabel] = useState(false);
+  const [fetchingInvoice, setFetchingInvoice] = useState(false);
 
   const token = localStorage.getItem('adminToken');
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
@@ -58,11 +67,30 @@ const AdminOrders = () => {
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
+  const refreshShipmentStatus = async (orderId) => {
+    setRefreshingStatus(true);
+    try {
+      const res = await fetch(`${API}/admin/orders/${orderId}/refresh-shipment`, { headers });
+      const data = await res.json();
+      if (data.success) setShipmentStatus(data.data);
+    } catch (err) {
+      console.error('Failed to refresh shipment status', err);
+    } finally {
+      setRefreshingStatus(false);
+    }
+  };
+
   const openOrderModal = async (orderId) => {
     try {
       const res = await fetch(`${API}/admin/orders/${orderId}`, { headers });
       const data = await res.json();
-      if (data.success) { setSelectedOrder(data.data); setNewStatus(data.data.orderStatus); setModalOpen(true); }
+      if (data.success) {
+        setSelectedOrder(data.data);
+        setNewStatus(data.data.orderStatus);
+        setShipmentStatus(null);
+        setModalOpen(true);
+        refreshShipmentStatus(orderId);
+      }
     } catch (err) { console.error(err); }
   };
 
@@ -94,7 +122,37 @@ const AdminOrders = () => {
     } catch { alert('Failed to cancel order'); }
   };
 
-  const statuses = ['all', 'pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
+  const handleGetLabel = async () => {
+    if (!selectedOrder) return;
+    setFetchingLabel(true);
+    try {
+      const res = await fetch(`${API}/admin/orders/${selectedOrder._id}/label`, { headers });
+      const data = await res.json();
+      if (data.success && data.data.label_url) {
+        window.open(data.data.label_url, '_blank');
+      } else {
+        alert(data.message || 'Label not ready yet — Direct Ship generates it shortly after AWB assignment.');
+      }
+    } catch { alert('Failed to fetch label'); }
+    finally { setFetchingLabel(false); }
+  };
+
+  const handleGetInvoice = async () => {
+    if (!selectedOrder) return;
+    setFetchingInvoice(true);
+    try {
+      const res = await fetch(`${API}/admin/orders/${selectedOrder._id}/invoice`, { headers });
+      const data = await res.json();
+      if (data.success && data.data.invoice_url) {
+        window.open(data.data.invoice_url, '_blank');
+      } else {
+        alert(data.message || 'Invoice not available yet');
+      }
+    } catch { alert('Failed to fetch invoice'); }
+    finally { setFetchingInvoice(false); }
+  };
+
+  const statuses = ['all', 'pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'ndr', 'rto'];
 
   return (
     <>
@@ -102,54 +160,24 @@ const AdminOrders = () => {
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Montserrat:wght@400;500;600;700&display=swap');
         .orders { font-family: 'Montserrat', sans-serif; }
         .card { background: #fff; border-radius: 16px; border: 1px solid #ede9fe; }
-
-        /* Summary pills */
-        .summary-pills {
-          display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;
-        }
-        .summary-pill {
-          background: #fff; border-radius: 12px; padding: '10px 16px';
-          display: flex; align-items: center; gap: 8px;
-          flex: 1 1 auto; min-width: 80px;
-        }
-
-        /* Filter bar */
-        .filter-bar {
-          display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
-          padding: 14px 16px; border-bottom: 1px solid #f5f3ff;
-        }
-        .select, .search-input {
-          padding: 9px 12px; border-radius: 10px; border: 1px solid #e5e7eb;
-          font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 500;
-          color: #374151; outline: none; background: #faf5ff;
-        }
+        .summary-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+        .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; padding: 14px 16px; border-bottom: 1px solid #f5f3ff; }
+        .select, .search-input { padding: 9px 12px; border-radius: 10px; border: 1px solid #e5e7eb; font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 500; color: #374151; outline: none; background: #faf5ff; }
         .search-input { flex: 1; min-width: 160px; }
         .select:focus, .search-input:focus { border-color: #9333ea; box-shadow: 0 0 0 2px rgba(147,51,234,0.1); }
-
-        /* Status pills */
         .status-pills { display: flex; gap: 5px; flex-wrap: wrap; }
-        .tab-pill {
-          padding: 6px 12px; border-radius: 20px; border: 1px solid #e5e7eb;
-          background: #fff; font-size: 11px; font-weight: 600; cursor: pointer;
-          transition: all 0.2s; color: #6b7280; white-space: nowrap;
-        }
+        .tab-pill { padding: 6px 12px; border-radius: 20px; border: 1px solid #e5e7eb; background: #fff; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s; color: #6b7280; white-space: nowrap; }
         .tab-pill.active { background: linear-gradient(135deg, #9333ea, #ec4899); border-color: transparent; color: #fff; }
         .tab-pill:hover:not(.active) { border-color: #9333ea; color: #9333ea; }
-
-        /* Table */
         .table { width: 100%; border-collapse: collapse; }
         .table th { background: #faf5ff; padding: 11px 14px; text-align: left; font-size: 10px; font-weight: 700; color: #9333ea; letter-spacing: 0.12em; text-transform: uppercase; border-bottom: 1px solid #ede9fe; white-space: nowrap; }
         .table td { padding: 12px 14px; font-size: 12px; color: #374151; border-bottom: 1px solid #f9f5ff; }
         .table tr:last-child td { border-bottom: none; }
         .table tr:hover td { background: #fdfaff; }
         .view-btn { padding: 6px 12px; border-radius: 8px; background: linear-gradient(135deg, #9333ea, #ec4899); color: #fff; border: none; font-size: 11px; font-weight: 700; cursor: pointer; }
-
-        /* Pagination */
         .page-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e5e7eb; background: #fff; cursor: pointer; font-size: 12px; font-weight: 600; color: #6b7280; }
         .page-btn.active { background: linear-gradient(135deg, #9333ea, #ec4899); color: #fff; border-color: transparent; }
         .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-        /* Modal */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 16px; }
         .modal { background: #fff; border-radius: 20px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; box-shadow: 0 32px 80px rgba(0,0,0,0.2); }
         .modal-header { padding: 20px 22px 14px; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: #fff; z-index: 1; }
@@ -157,29 +185,27 @@ const AdminOrders = () => {
         .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f9f5ff; font-size: 13px; gap: 10px; }
         .detail-label { color: #9ca3af; font-weight: 500; flex-shrink: 0; }
         .detail-val { color: #1f2937; font-weight: 600; text-align: right; word-break: break-all; }
-        .section-head { font-size: 11px; font-weight: 700; color: #9333ea; letter-spacing: 0.12em; text-transform: uppercase; margin: 16px 0 8px; }
+        .section-head { font-size: 11px; font-weight: 700; color: #9333ea; letter-spacing: 0.12em; text-transform: uppercase; margin: 16px 0 8px; display: flex; align-items: center; justify-content: space-between; }
         .status-select { padding: 10px 14px; border-radius: 10px; border: 1px solid #e5e7eb; font-family: 'Montserrat', sans-serif; font-size: 13px; color: #374151; width: 100%; background: #faf5ff; }
         .update-btn { padding: 11px 20px; border-radius: 10px; background: linear-gradient(135deg, #9333ea, #ec4899); color: #fff; border: none; font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .update-btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .cancel-btn { padding: 11px 18px; border-radius: 10px; background: #fee2e2; color: #991b1b; border: none; font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; }
         .close-btn { background: none; border: none; font-size: 22px; cursor: pointer; color: #9ca3af; line-height: 1; }
         .check-label { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #6b7280; cursor: pointer; }
-
+        .refresh-btn { font-size: 11px; background: none; border: 1px solid #e5e7eb; border-radius: 8px; padding: 4px 10px; cursor: pointer; color: #9333ea; font-weight: 600; }
+        .refresh-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .status-pending-banner { font-size: 12px; color: #d97706; background: #fef3c7; padding: 10px 12px; border-radius: 10px; margin-bottom: 10px; }
         .hide-mobile { display: table-cell; }
-
         @media (max-width: 767px) {
           .hide-mobile { display: none !important; }
           .filter-bar { padding: 12px; gap: 8px; }
           .modal { max-height: 95vh; border-radius: 16px 16px 0 0; align-self: flex-end; }
           .modal-overlay { align-items: flex-end; padding: 0; }
         }
-
-        @media (max-width: 480px) {
-          .tab-pill { padding: 5px 9px; font-size: 10px; }
-        }
+        @media (max-width: 480px) { .tab-pill { padding: 5px 9px; font-size: 10px; } }
       `}</style>
 
       <div className="orders">
-        {/* Summary pills */}
         <div className="summary-pills">
           {[
             { label: 'Total', value: summary.totalOrders, color: '#9333ea' },
@@ -197,7 +223,6 @@ const AdminOrders = () => {
         </div>
 
         <div className="card" style={{ overflow: 'hidden' }}>
-          {/* Filters */}
           <div className="filter-bar">
             <input className="search-input" placeholder="🔍 Search name, email..." value={filters.search}
               onChange={e => setFilters(f => ({ ...f, search: e.target.value, page: 1 }))} />
@@ -216,7 +241,6 @@ const AdminOrders = () => {
             </div>
           </div>
 
-          {/* Table */}
           {loading ? (
             <div style={{ padding: '60px', textAlign: 'center', color: '#9ca3af' }}>Loading orders...</div>
           ) : (
@@ -224,14 +248,8 @@ const AdminOrders = () => {
               <table className="table" style={{ minWidth: 500 }}>
                 <thead>
                   <tr>
-                    <th>Order #</th>
-                    <th>Customer</th>
-                    <th className="hide-mobile">Items</th>
-                    <th>Total</th>
-                    <th className="hide-mobile">Method</th>
-                    <th>Status</th>
-                    <th className="hide-mobile">Date</th>
-                    <th>Action</th>
+                    <th>Order #</th><th>Customer</th><th className="hide-mobile">Items</th><th>Total</th>
+                    <th className="hide-mobile">Method</th><th>Status</th><th className="hide-mobile">Date</th><th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -253,9 +271,7 @@ const AdminOrders = () => {
                       <td className="hide-mobile" style={{ color: '#9ca3af', fontSize: 12 }}>
                         {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' })}
                       </td>
-                      <td>
-                        <button className="view-btn" onClick={() => openOrderModal(order._id)}>View</button>
-                      </td>
+                      <td><button className="view-btn" onClick={() => openOrderModal(order._id)}>View</button></td>
                     </tr>
                   ))}
                 </tbody>
@@ -263,7 +279,6 @@ const AdminOrders = () => {
             </div>
           )}
 
-          {/* Pagination */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderTop: '1px solid #f5f3ff', flexWrap: 'wrap', gap: 8 }}>
             <span style={{ fontSize: 12, color: '#9ca3af' }}>Showing {orders.length} of {total}</span>
             <div style={{ display: 'flex', gap: 6 }}>
@@ -276,7 +291,6 @@ const AdminOrders = () => {
           </div>
         </div>
 
-        {/* Order Detail Modal */}
         {modalOpen && selectedOrder && (
           <div className="modal-overlay" onClick={() => setModalOpen(false)}>
             <div className="modal" onClick={e => e.stopPropagation()}>
@@ -329,17 +343,44 @@ const AdminOrders = () => {
                   </div>
                 ))}
 
-                {selectedOrder.nimbusAwb && (
+                {/* Shipment Status Panel (Shiprocket) */}
+                <div className="section-head">
+                  <span>Shipment Status</span>
+                  <button className="refresh-btn" onClick={() => refreshShipmentStatus(selectedOrder._id)} disabled={refreshingStatus}>
+                    {refreshingStatus ? 'Checking...' : '↻ Refresh'}
+                  </button>
+                </div>
+
+                {!shipmentStatus ? (
+                  <div style={{ fontSize: 12, color: '#9ca3af', padding: '8px 0' }}>Checking shipment status...</div>
+                ) : !shipmentStatus.synced ? (
+                  <div className="status-pending-banner">⏳ {shipmentStatus.reason}</div>
+                ) : (
                   <>
-                    <div className="section-head">Shipment</div>
-                    <div className="detail-row"><span className="detail-label">AWB</span><span className="detail-val">{selectedOrder.nimbusAwb}</span></div>
-                    <div className="detail-row"><span className="detail-label">Courier</span><span className="detail-val">{selectedOrder.nimbusCourier || '—'}</span></div>
+                    <div className="detail-row">
+                      <span className="detail-label">Courier Assigned</span>
+                      <span className="detail-val" style={{ color: shipmentStatus.courierAssigned ? '#059669' : '#d97706' }}>
+                        {shipmentStatus.courierAssigned ? `✓ ${shipmentStatus.courier || 'Yes'}` : '⏳ Pending'}
+                      </span>
+                    </div>
+                    <div className="detail-row"><span className="detail-label">AWB</span><span className="detail-val">{shipmentStatus.awb || '—'}</span></div>
+                    <div className="detail-row"><span className="detail-label">Shiprocket Status</span><span className="detail-val">{shipmentStatus.shiprocketStatus || '—'}</span></div>
+                    <div className="detail-row"><span className="detail-label">Pickup Scheduled</span><span className="detail-val">{shipmentStatus.pickupScheduledDate || 'Not yet'}</span></div>
                   </>
                 )}
 
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', margin: '12px 0 4px' }}>
+                  <button className="update-btn" onClick={handleGetLabel} disabled={fetchingLabel}>
+                    {fetchingLabel ? 'Fetching...' : '📄 Get Label'}
+                  </button>
+                  <button className="update-btn" onClick={handleGetInvoice} disabled={fetchingInvoice}>
+                    {fetchingInvoice ? 'Fetching...' : '🧾 Get Invoice'}
+                  </button>
+                </div>
+
                 <div className="section-head">Update Status</div>
                 <select className="status-select" value={newStatus} onChange={e => setNewStatus(e.target.value)} style={{ marginBottom: 10 }}>
-                  {['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'].map(s => (
+                  {['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'ndr', 'rto', 'rto_complete'].map(s => (
                     <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
                   ))}
                 </select>

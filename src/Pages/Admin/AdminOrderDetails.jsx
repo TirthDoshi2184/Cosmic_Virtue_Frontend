@@ -3,12 +3,15 @@ import { useParams, useNavigate } from 'react-router-dom';
 
 const StatusBadge = ({ status }) => {
   const colors = {
-    pending:    { bg: '#fef3c7', text: '#92400e', dot: '#f59e0b' },
-    confirmed:  { bg: '#dbeafe', text: '#1e40af', dot: '#3b82f6' },
-    processing: { bg: '#e0e7ff', text: '#3730a3', dot: '#6366f1' },
-    shipped:    { bg: '#d1fae5', text: '#065f46', dot: '#10b981' },
-    delivered:  { bg: '#d1fae5', text: '#065f46', dot: '#059669' },
-    cancelled:  { bg: '#fee2e2', text: '#991b1b', dot: '#ef4444' },
+    pending:      { bg: '#fef3c7', text: '#92400e', dot: '#f59e0b' },
+    confirmed:    { bg: '#dbeafe', text: '#1e40af', dot: '#3b82f6' },
+    processing:   { bg: '#e0e7ff', text: '#3730a3', dot: '#6366f1' },
+    shipped:      { bg: '#d1fae5', text: '#065f46', dot: '#10b981' },
+    delivered:    { bg: '#d1fae5', text: '#065f46', dot: '#059669' },
+    cancelled:    { bg: '#fee2e2', text: '#991b1b', dot: '#ef4444' },
+    ndr:          { bg: '#fef3c7', text: '#92400e', dot: '#f59e0b' },
+    rto:          { bg: '#fee2e2', text: '#991b1b', dot: '#ef4444' },
+    rto_complete: { bg: '#fee2e2', text: '#991b1b', dot: '#ef4444' },
   };
   const c = colors[status] || { bg: '#f3f4f6', text: '#6b7280', dot: '#9ca3af' };
   return (
@@ -31,9 +34,28 @@ const AdminOrderDetail = () => {
   const [trackingLoading, setTrackingLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
+  // Shipment status (Direct Ship visibility)
+  const [shipmentStatus, setShipmentStatus] = useState(null);
+  const [refreshingStatus, setRefreshingStatus] = useState(false);
+  const [fetchingLabel, setFetchingLabel] = useState(false);
+  const [fetchingInvoice, setFetchingInvoice] = useState(false);
+
   const token = localStorage.getItem('adminToken');
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
   const API = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
+  const refreshShipmentStatus = async () => {
+    setRefreshingStatus(true);
+    try {
+      const res = await fetch(`${API}/admin/orders/${orderId}/refresh-shipment`, { headers });
+      const data = await res.json();
+      if (data.success) setShipmentStatus(data.data);
+    } catch (err) {
+      console.error('Failed to refresh shipment status', err);
+    } finally {
+      setRefreshingStatus(false);
+    }
+  };
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -45,6 +67,8 @@ const AdminOrderDetail = () => {
       finally { setLoading(false); }
     };
     fetchOrder();
+    refreshShipmentStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId]);
 
   const handleUpdateStatus = async () => {
@@ -74,26 +98,9 @@ const AdminOrderDetail = () => {
     } catch { setMessage({ type: 'error', text: 'Failed to cancel.' }); }
   };
 
-  const handleRetryShipment = async () => {
-    try {
-      const res = await fetch(`${API}/admin/orders/${orderId}/retry-shipment`, { method: 'POST', headers });
-      const data = await res.json();
-      if (data.success) setMessage({ type: 'success', text: `Shipment created! AWB: ${data.data.awb}` });
-      else setMessage({ type: 'error', text: data.message });
-    } catch { setMessage({ type: 'error', text: 'Failed to create shipment.' }); }
-  };
-
-  const handleShipOrder = async () => {
-    try {
-      const res = await fetch(`${API}/admin/orders/${orderId}/ship`, { method: 'POST', headers });
-      const data = await res.json();
-      if (data.success) {
-        setMessage({ type: 'success', text: 'Shipment booked successfully!' });
-        setOrder(prev => ({ ...prev, orderStatus: 'processing', nimbusAwb: data.data?.awb_number || prev.nimbusAwb }));
-      } else setMessage({ type: 'error', text: data.message });
-    } catch { setMessage({ type: 'error', text: 'Failed to book shipment.' }); }
-  };
-
+  // Shiprocket's /courier/track response shape:
+  // { tracking_data: { shipment_track: [{ awb_code, courier_name, current_status, edd, ... }],
+  //                    shipment_track_activities: [{ date, status, activity, location }] } }
   const handleTrack = async () => {
     setTrackingLoading(true);
     try {
@@ -105,8 +112,39 @@ const AdminOrderDetail = () => {
     finally { setTrackingLoading(false); }
   };
 
+  const handleGetLabel = async () => {
+    setFetchingLabel(true);
+    try {
+      const res = await fetch(`${API}/admin/orders/${orderId}/label`, { headers });
+      const data = await res.json();
+      if (data.success && data.data.label_url) {
+        window.open(data.data.label_url, '_blank');
+      } else {
+        setMessage({ type: 'error', text: data.message || 'Label not ready yet.' });
+      }
+    } catch { setMessage({ type: 'error', text: 'Failed to fetch label.' }); }
+    finally { setFetchingLabel(false); }
+  };
+
+  const handleGetInvoice = async () => {
+    setFetchingInvoice(true);
+    try {
+      const res = await fetch(`${API}/admin/orders/${orderId}/invoice`, { headers });
+      const data = await res.json();
+      if (data.success && data.data.invoice_url) {
+        window.open(data.data.invoice_url, '_blank');
+      } else {
+        setMessage({ type: 'error', text: data.message || 'Invoice not available yet.' });
+      }
+    } catch { setMessage({ type: 'error', text: 'Failed to fetch invoice.' }); }
+    finally { setFetchingInvoice(false); }
+  };
+
   if (loading) return <div style={{ textAlign:'center', padding:80, color:'#9ca3af', fontFamily:'Montserrat,sans-serif' }}>Loading order...</div>;
   if (!order) return <div style={{ textAlign:'center', padding:80, color:'#ef4444', fontFamily:'Montserrat,sans-serif' }}>Order not found.</div>;
+
+  const trackSummary = tracking?.tracking_data?.shipment_track?.[0];
+  const trackActivities = tracking?.tracking_data?.shipment_track_activities || [];
 
   return (
     <>
@@ -116,21 +154,21 @@ const AdminOrderDetail = () => {
         .back-btn { display:inline-flex; align-items:center; gap:6px; background:none; border:none; color:#9333ea; font-family:'Montserrat',sans-serif; font-size:13px; font-weight:600; cursor:pointer; margin-bottom:16px; padding:0; }
         .back-btn:hover { opacity:0.7; }
         .card { background:#fff; border-radius:16px; border:1px solid #ede9fe; padding:20px; margin-bottom:14px; }
-        .card-title { font-size:11px; font-weight:700; color:#9333ea; letter-spacing:0.12em; text-transform:uppercase; margin-bottom:14px; }
+        .card-title { font-size:11px; font-weight:700; color:#9333ea; letter-spacing:0.12em; text-transform:uppercase; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; }
         .detail-row { display:flex; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid #f9f5ff; font-size:13px; }
         .detail-row:last-child { border-bottom:none; }
         .dl { color:#9ca3af; font-weight:500; flex-shrink:0; }
         .dv { color:#1f2937; font-weight:600; text-align:right; word-break:break-all; }
-
-        /* Responsive 2-col grid */
         .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
-
         .status-select { width:100%; padding:11px 14px; border-radius:10px; border:1px solid #e5e7eb; font-family:'Montserrat',sans-serif; font-size:13px; background:#faf5ff; outline:none; margin-bottom:10px; box-sizing:border-box; }
         .status-select:focus { border-color:#9333ea; }
         .update-btn { padding:10px 20px; border-radius:10px; background:linear-gradient(135deg,#9333ea,#ec4899); color:#fff; border:none; font-family:'Montserrat',sans-serif; font-size:12px; font-weight:700; cursor:pointer; }
+        .update-btn:disabled { opacity:0.6; cursor:not-allowed; }
         .cancel-btn { padding:10px 16px; border-radius:10px; background:#fee2e2; color:#991b1b; border:none; font-family:'Montserrat',sans-serif; font-size:12px; font-weight:700; cursor:pointer; }
         .track-btn { padding:10px 16px; border-radius:10px; background:#e0e7ff; color:#3730a3; border:none; font-family:'Montserrat',sans-serif; font-size:12px; font-weight:700; cursor:pointer; }
-        .retry-btn { padding:10px 16px; border-radius:10px; background:#fef3c7; color:#92400e; border:none; font-family:'Montserrat',sans-serif; font-size:12px; font-weight:700; cursor:pointer; }
+        .refresh-btn { font-size:11px; background:none; border:1px solid #e5e7eb; border-radius:8px; padding:4px 10px; cursor:pointer; color:#9333ea; font-weight:600; }
+        .refresh-btn:disabled { opacity:0.6; cursor:not-allowed; }
+        .status-pending-banner { font-size:12px; color:#d97706; background:#fef3c7; padding:10px 12px; border-radius:10px; margin-bottom:10px; }
         .alert { padding:12px 16px; border-radius:10px; font-size:13px; margin-bottom:12px; }
         .alert-s { background:#d1fae5; color:#065f46; border:1px solid #6ee7b7; }
         .alert-e { background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; }
@@ -139,18 +177,14 @@ const AdminOrderDetail = () => {
         .item-img { width:48px; height:48px; border-radius:10px; object-fit:cover; background:#faf5ff; flex-shrink:0; }
         .page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:18px; flex-wrap:wrap; gap:10px; }
         .action-buttons { display:flex; gap:8px; flex-wrap:wrap; }
-
-        /* Tracking grid */
         .track-summary { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:14px; }
-
         @media (max-width: 767px) {
           .grid2 { grid-template-columns:1fr; }
           .track-summary { grid-template-columns:repeat(2, 1fr); }
           .page-header { flex-direction:column; }
           .action-buttons { width:100%; }
-          .update-btn, .cancel-btn, .track-btn, .retry-btn { flex:1; text-align:center; }
+          .update-btn, .cancel-btn, .track-btn { flex:1; text-align:center; }
         }
-
         @media (max-width: 480px) {
           .card { padding:16px; }
           .track-summary { grid-template-columns:1fr 1fr; }
@@ -203,7 +237,6 @@ const AdminOrderDetail = () => {
           </div>
         </div>
 
-        {/* Items */}
         <div className="card">
           <div className="card-title">🕯️ Order Items</div>
           {order.items?.map((item, i) => (
@@ -255,26 +288,42 @@ const AdminOrderDetail = () => {
             ))}
           </div>
 
+          {/* Shipment card — Shiprocket fields + Direct Ship live status */}
           <div className="card">
-            <div className="card-title">🚚 Shipment</div>
-            {[
-              ['AWB', order.nimbusAwb || 'Not assigned yet'],
-              ['Nimbus Order ID', order.nimbusOrderId || '—'],
-              ['Courier', order.nimbusCourier || '—'],
-              ['Tracking #', order.trackingNumber || '—'],
-              ['Delivered At', order.deliveredAt ? new Date(order.deliveredAt).toLocaleDateString('en-IN') : '—'],
-            ].map(([l, v]) => (
-              <div className="detail-row" key={l}><span className="dl">{l}</span><span className="dv">{v}</span></div>
-            ))}
+            <div className="card-title">
+              <span>🚚 Shipment (Direct Ship)</span>
+              <button className="refresh-btn" onClick={refreshShipmentStatus} disabled={refreshingStatus}>
+                {refreshingStatus ? 'Checking...' : '↻ Refresh'}
+              </button>
+            </div>
+
+            {!shipmentStatus ? (
+              <div style={{ fontSize:12, color:'#9ca3af', padding:'8px 0' }}>Checking shipment status...</div>
+            ) : !shipmentStatus.synced ? (
+              <div className="status-pending-banner">⏳ {shipmentStatus.reason}</div>
+            ) : (
+              <>
+                <div className="detail-row">
+                  <span className="dl">Courier Assigned</span>
+                  <span className="dv" style={{ color: shipmentStatus.courierAssigned ? '#059669' : '#d97706' }}>
+                    {shipmentStatus.courierAssigned ? `✓ ${shipmentStatus.courier || 'Yes'}` : '⏳ Pending'}
+                  </span>
+                </div>
+                <div className="detail-row"><span className="dl">AWB</span><span className="dv">{shipmentStatus.awb || order.srAwb || 'Not assigned yet'}</span></div>
+                <div className="detail-row"><span className="dl">Shiprocket Status</span><span className="dv">{shipmentStatus.shiprocketStatus || '—'}</span></div>
+                <div className="detail-row"><span className="dl">Pickup Scheduled</span><span className="dv">{shipmentStatus.pickupScheduledDate || 'Not yet'}</span></div>
+              </>
+            )}
+            <div className="detail-row"><span className="dl">Delivered At</span><span className="dv">{order.deliveredAt ? new Date(order.deliveredAt).toLocaleDateString('en-IN') : '—'}</span></div>
           </div>
         </div>
 
-        {/* Update Status */}
+        {/* Update Status + Actions */}
         <div className="card">
           <div className="card-title">⚡ Update Order</div>
 
           <select className="status-select" value={newStatus} onChange={e => setNewStatus(e.target.value)}>
-            {['pending','confirmed','processing','shipped','delivered','cancelled'].map(s => (
+            {['pending','confirmed','processing','shipped','delivered','cancelled','ndr','rto','rto_complete'].map(s => (
               <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
             ))}
           </select>
@@ -291,55 +340,54 @@ const AdminOrderDetail = () => {
             {order.orderStatus !== 'cancelled' && order.orderStatus !== 'delivered' && (
               <button className="cancel-btn" onClick={handleCancelOrder}>❌ Cancel Order</button>
             )}
-            {!order.nimbusOrderId && !order.nimbusAwb && ['confirmed', 'processing'].includes(order.orderStatus) && (
-              <button className="retry-btn" onClick={handleRetryShipment}>📦 Create Shipment</button>
-            )}
-            {order.nimbusOrderId && !order.nimbusAwb && (
-              <button className="retry-btn" onClick={handleShipOrder}>🚀 Book Shipment</button>
-            )}
-            {order.nimbusAwb && (
-              <button className="track-btn" onClick={handleTrack} disabled={trackingLoading}>
-                {trackingLoading ? 'Tracking...' : '🔍 Track Shipment'}
-              </button>
-            )}
+            <button className="update-btn" onClick={handleGetLabel} disabled={fetchingLabel}>
+              {fetchingLabel ? 'Fetching...' : '📄 Get Label'}
+            </button>
+            <button className="update-btn" onClick={handleGetInvoice} disabled={fetchingInvoice}>
+              {fetchingInvoice ? 'Fetching...' : '🧾 Get Invoice'}
+            </button>
+            <button className="track-btn" onClick={handleTrack} disabled={trackingLoading}>
+              {trackingLoading ? 'Tracking...' : '🔍 Track Shipment'}
+            </button>
           </div>
 
           {tracking && (
             <div style={{ marginTop:16, background:'#f9f5ff', borderRadius:12, padding:16 }}>
               <div style={{ fontWeight:700, color:'#9333ea', marginBottom:12, fontSize:13 }}>📦 Tracking Info</div>
 
-              <div className="track-summary">
-                {[
-                  { label: 'AWB', value: tracking.data?.awb_number },
-                  { label: 'Courier', value: tracking.data?.courier_name },
-                  { label: 'Status', value: tracking.data?.status },
-                  { label: 'Payment', value: tracking.data?.payment_type },
-                  { label: 'Created', value: tracking.data?.created },
-                  { label: 'EDD', value: tracking.data?.edd || 'Not set' },
-                ].map(({ label, value }) => (
-                  <div key={label} style={{ background:'#fff', borderRadius:10, padding:'10px 12px', border:'1px solid #ede9fe' }}>
-                    <div style={{ fontSize:10, color:'#9ca3af', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:4 }}>{label}</div>
-                    <div style={{ fontSize:12, fontWeight:600, color:'#1f2937', textTransform:'capitalize', wordBreak:'break-all' }}>{value || '—'}</div>
-                  </div>
-                ))}
-              </div>
+              {!trackSummary ? (
+                <div style={{ fontSize:12, color:'#9ca3af' }}>No tracking data available yet.</div>
+              ) : (
+                <div className="track-summary">
+                  {[
+                    { label: 'AWB', value: trackSummary.awb_code },
+                    { label: 'Courier', value: trackSummary.courier_name },
+                    { label: 'Status', value: trackSummary.current_status },
+                    { label: 'Origin', value: trackSummary.origin },
+                    { label: 'Destination', value: trackSummary.destination },
+                    { label: 'EDD', value: trackSummary.edd || 'Not set' },
+                  ].map(({ label, value }) => (
+                    <div key={label} style={{ background:'#fff', borderRadius:10, padding:'10px 12px', border:'1px solid #ede9fe' }}>
+                      <div style={{ fontSize:10, color:'#9ca3af', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:4 }}>{label}</div>
+                      <div style={{ fontSize:12, fontWeight:600, color:'#1f2937', textTransform:'capitalize', wordBreak:'break-all' }}>{value || '—'}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-              {tracking.data?.history?.length > 0 && (
+              {trackActivities.length > 0 && (
                 <div>
                   <div style={{ fontSize:11, fontWeight:700, color:'#9333ea', letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:10 }}>History</div>
                   <div style={{ position:'relative', paddingLeft:20 }}>
                     <div style={{ position:'absolute', left:7, top:0, bottom:0, width:2, background:'#ede9fe', borderRadius:2 }} />
-                    {tracking.data.history.map((h, i) => (
+                    {trackActivities.map((h, i) => (
                       <div key={i} style={{ position:'relative', marginBottom:10, paddingLeft:16 }}>
                         <div style={{ position:'absolute', left:-6, top:4, width:10, height:10, borderRadius:'50%', background: i === 0 ? '#9333ea' : '#d8b4fe', border:'2px solid #fff', boxShadow:'0 0 0 2px #ede9fe' }} />
                         <div style={{ background:'#fff', borderRadius:10, padding:'10px 12px', border:'1px solid #ede9fe' }}>
                           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', flexWrap:'wrap', gap:6 }}>
-                            <div style={{ minWidth:0 }}>
-                              <span style={{ fontSize:10, fontWeight:700, background:'#ede9fe', color:'#7c3aed', padding:'2px 8px', borderRadius:20, marginRight:6 }}>{h.status_code}</span>
-                              <span style={{ fontSize:12, fontWeight:600, color:'#1f2937' }}>{h.message?.replace(/_/g, ' ')}</span>
-                            </div>
+                            <span style={{ fontSize:12, fontWeight:600, color:'#1f2937' }}>{h.activity}</span>
                             <div style={{ fontSize:11, color:'#9ca3af', flexShrink:0 }}>
-                              {h.event_time ? new Date(parseInt(h.event_time) * 1000).toLocaleString('en-IN', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '—'}
+                              {h.date ? new Date(h.date).toLocaleString('en-IN', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '—'}
                             </div>
                           </div>
                           {h.location && <div style={{ fontSize:11, color:'#6b7280', marginTop:4 }}>📍 {h.location}</div>}

@@ -296,7 +296,7 @@ const handleLogout = () => {
               </div>
 
               {/* Bath Gallery */}
-              <div
+              {/* <div
                 className="relative group"
                 onMouseEnter={() => setBathDropdown(true)}
                 onMouseLeave={() => setBathDropdown(false)}
@@ -317,7 +317,7 @@ const handleLogout = () => {
                     ))}
                   </div>
                 )}
-              </div>
+              </div> */}
 
               {/* Pearl Wax */}
               {/* <a href="/products?category=pearl-wax" className={desktopLink}>
@@ -437,7 +437,7 @@ const handleLogout = () => {
             </MobileAccordion>
 
             {/* Bath Gallery accordion */}
-            <MobileAccordion
+            {/* <MobileAccordion
               label="Bath Gallery"
               isOpen={mobileBathOpen}
               onToggle={() => setMobileBathOpen(!mobileBathOpen)}
@@ -449,7 +449,7 @@ const handleLogout = () => {
                   {label}
                 </a>
               ))}
-            </MobileAccordion>
+            </MobileAccordion> */}
 
             {/* Pearl Wax */}
             {/* <a href="/products?category=pearl-wax" className="flex items-center px-4 py-3 text-gray-700 font-medium text-sm rounded-xl hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 transition-all duration-200" onClick={() => setMobileMenuOpen(false)}>

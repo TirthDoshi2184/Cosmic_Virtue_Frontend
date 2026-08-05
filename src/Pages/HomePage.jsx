@@ -533,7 +533,7 @@ const rakhiHampers = summerSaleProducts.filter(
       </div>
 
       {/* Bento-style grid: first hamper featured large */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 auto-rows-[280px] gap-5 sm:gap-6 mt-12">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 sm:auto-rows-[280px] mt-12">
         {rakhiHampers.slice(0, 6).map((product, index) => {
           const isHero = index === 0;
           const itemCount = Array.isArray(product.keyFeatures) ? product.keyFeatures.length : null;
@@ -548,7 +548,9 @@ const rakhiHampers = summerSaleProducts.filter(
               onClick={() => navigate(`/product/${product._id}`)}
             >
               {/* Image */}
-              <div className={`relative overflow-hidden bg-gradient-to-br from-orange-100 to-red-50 ${isHero ? 'h-3/5 sm:h-2/3' : 'h-1/2'}`}>
+              <div className={`relative overflow-hidden bg-gradient-to-br from-orange-100 to-red-50 aspect-square sm:aspect-auto ${
+  isHero ? 'sm:h-3/5 lg:h-2/3' : 'sm:h-1/2'
+}`}>
                 {product.img?.[0] ? (
                   <img
                     src={product.img[0]}

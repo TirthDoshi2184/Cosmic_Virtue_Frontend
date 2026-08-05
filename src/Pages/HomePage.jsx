@@ -283,13 +283,43 @@ const rakhiHampers = summerSaleProducts.filter(
   50%       { box-shadow: 0 0 50px rgba(217,119,6,0.65), 0 0 80px rgba(220,38,38,0.2); }
 }
 @keyframes threadSway {
-  0%, 100% { transform: rotate(-4deg); }
-  50%       { transform: rotate(4deg); }
+  0%, 100% { transform: rotate(-6deg); }
+  50%       { transform: rotate(6deg); }
 }
-.rakhi-section { animation: rakhiGlow 2.5s ease-in-out infinite; }
+@keyframes floatMotif {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.5; }
+  50%       { transform: translateY(-14px) rotate(8deg); opacity: 0.85; }
+}
+@keyframes cardRise {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.rakhi-section {
+  animation: rakhiGlow 3s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
+}
+.rakhi-bg-pattern {
+  position: absolute;
+  inset: 0;
+  opacity: 0.06;
+  background-image: radial-gradient(circle, #d97706 1.5px, transparent 1.5px);
+  background-size: 28px 28px;
+  pointer-events: none;
+}
+.rakhi-motif {
+  position: absolute;
+  font-size: 2.5rem;
+  animation: floatMotif 5s ease-in-out infinite;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 10px rgba(217,119,6,0.25));
+}
 .rakhi-thread-icon { display: inline-block; animation: threadSway 2s ease-in-out infinite; transform-origin: top center; }
-.rakhi-card-home { transition: transform 0.35s ease, box-shadow 0.35s ease; }
-.rakhi-card-home:hover { transform: translateY(-8px); box-shadow: 0 20px 50px rgba(217,119,6,0.3); }
+.rakhi-card-home {
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+  animation: cardRise 0.6s ease-out both;
+}
+.rakhi-card-home:hover { transform: translateY(-8px); box-shadow: 0 24px 55px rgba(217,119,6,0.32); }
 .rakhi-card-home .r-img { transition: transform 0.6s ease; }
 .rakhi-card-home:hover .r-img { transform: scale(1.08); }
 .rakhi-quick-add-home {
@@ -309,7 +339,14 @@ const rakhiHampers = summerSaleProducts.filter(
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
-      `}</style>
+.rakhi-chip {
+  background: rgba(217,119,6,0.08);
+  border: 1px solid rgba(217,119,6,0.25);
+}
+.rakhi-hero-card { grid-row: span 2; grid-column: span 2; }
+@media (max-width: 1023px) {
+  .rakhi-hero-card { grid-row: span 1; grid-column: span 1; }
+}      `}</style>
 
       {/* ══════════════════════════════════════
           HERO CAROUSEL
@@ -460,10 +497,19 @@ const rakhiHampers = summerSaleProducts.filter(
 ══════════════════════════════════════ */}
 {!summerSaleLoading && rakhiHampers.length > 0 && (
   <section className="rakhi-section py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-orange-50 via-amber-50 to-red-50">
-    <div className="max-w-7xl mx-auto">
+    {/* Decorative dot pattern */}
+    <div className="rakhi-bg-pattern" />
+
+    {/* Floating decorative motifs */}
+    <span className="rakhi-motif hidden sm:block" style={{ top: '8%', left: '4%', animationDelay: '0s' }}>🪔</span>
+    <span className="rakhi-motif hidden sm:block" style={{ top: '15%', right: '6%', animationDelay: '1.2s' }}>🧵</span>
+    <span className="rakhi-motif hidden lg:block" style={{ bottom: '10%', left: '8%', animationDelay: '2.4s' }}>🎁</span>
+    <span className="rakhi-motif hidden lg:block" style={{ bottom: '18%', right: '10%', animationDelay: '0.6s' }}>🪔</span>
+
+    <div className="max-w-7xl mx-auto relative z-10">
 
       {/* Header */}
-      <div className="text-center mb-12">
+      <div className="text-center mb-4">
         <div className="flex items-center justify-center gap-3 mb-4">
           <span className="h-px w-10 bg-gradient-to-r from-orange-400 to-red-400"></span>
           <span className="rakhi-thread-icon text-2xl">🧵</span>
@@ -476,79 +522,116 @@ const rakhiHampers = summerSaleProducts.filter(
           Rakhi Special Hampers
         </h2>
         <p
-          className="text-gray-600 text-sm sm:text-base max-w-xl mx-auto"
+          className="text-gray-600 text-sm sm:text-base max-w-xl mx-auto mb-3"
           style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 300 }}
         >
           Celebrate the bond of Rakshabandhan with our curated hampers of candles, bath salts, wax melts &amp; chocolates
         </p>
+        <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-red-600 text-white text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full shadow-md">
+          ⏳ Limited Time — Shop Before Rakhi Runs Out
+        </span>
       </div>
 
-      {/* Products grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-        {rakhiHampers.slice(0, 6).map((product) => (
-          <div
-            key={product._id}
-            className="rakhi-card-home group bg-white rounded-2xl overflow-hidden shadow-md cursor-pointer border border-orange-100"
-            onClick={() => navigate(`/product/${product._id}`)}
-          >
-            {/* Image */}
-            <div className="relative aspect-square overflow-hidden bg-gray-50">
-              <img
-                src={product.img?.[0] || 'https://images.unsplash.com/photo-1602874801006-64c78b297c86?w=600&h=600&fit=crop'}
-                alt={product.name}
-                className="r-img w-full h-full object-cover"
-                onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1602874801006-64c78b297c86?w=600&h=600&fit=crop'; }}
-              />
+      {/* Bento-style grid: first hamper featured large */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 auto-rows-[280px] gap-5 sm:gap-6 mt-12">
+        {rakhiHampers.slice(0, 6).map((product, index) => {
+          const isHero = index === 0;
+          const itemCount = Array.isArray(product.keyFeatures) ? product.keyFeatures.length : null;
 
-              {/* Rakhi badge */}
-              <div className="absolute top-3 left-3">
-                <span className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-3 py-1 rounded-full text-xs font-bold tracking-wide shadow-md flex items-center gap-1">
-                  🪔 RAKHI SPECIAL
-                </span>
+          return (
+            <div
+              key={product._id}
+              className={`rakhi-card-home group bg-white rounded-2xl overflow-hidden shadow-md cursor-pointer border border-orange-100 relative flex flex-col ${
+                isHero ? 'rakhi-hero-card sm:col-span-2' : ''
+              }`}
+              style={{ animationDelay: `${index * 0.1}s` }}
+              onClick={() => navigate(`/product/${product._id}`)}
+            >
+              {/* Image */}
+              <div className={`relative overflow-hidden bg-gradient-to-br from-orange-100 to-red-50 ${isHero ? 'h-3/5 sm:h-2/3' : 'h-1/2'}`}>
+                {product.img?.[0] ? (
+                  <img
+                    src={product.img[0]}
+                    alt={product.name}
+                    className="r-img w-full h-full object-cover"
+                    onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                  />
+                ) : null}
+                {/* Fallback (also shown on image error) */}
+                <div
+                  className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-orange-400"
+                  style={{ display: product.img?.[0] ? 'none' : 'flex' }}
+                >
+                  <span className="text-4xl">🎁</span>
+                  <span className="text-[11px] uppercase tracking-widest font-semibold" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+                    Rakhi Hamper
+                  </span>
+                </div>
+
+                {/* Badges */}
+                <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
+                  <span className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-3 py-1 rounded-full text-[10px] font-bold tracking-wide shadow-md flex items-center gap-1">
+                    🪔 RAKHI SPECIAL
+                  </span>
+                  {product.isBestSeller && (
+                    <span className="bg-gray-900 text-white px-3 py-1 rounded-full text-[10px] font-bold tracking-wide shadow-md">
+                      ⭐ BESTSELLER
+                    </span>
+                  )}
+                </div>
+
+                {/* Hover overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="rakhi-quick-add-home absolute bottom-3 left-0 right-0 flex items-center justify-center gap-2.5">
+                    <button
+                      onClick={(e) => handleAddToCart(product, e)}
+                      className="bg-white text-gray-900 px-4 py-2 rounded-full font-semibold text-[11px] tracking-wide hover:bg-gray-100 transition-colors shadow-lg flex items-center gap-1.5"
+                      style={{ fontFamily: "'Montserrat', sans-serif" }}
+                    >
+                      <ShoppingCart className="w-3.5 h-3.5" /> Add
+                    </button>
+                    <button
+                      onClick={(e) => handleAddToWishlist(product, e)}
+                      className="w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-colors"
+                    >
+                      <Heart className="w-3.5 h-3.5 text-gray-600 hover:text-red-500 transition-colors" />
+                    </button>
+                  </div>
+                </div>
               </div>
 
-              {/* Hover overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <div className="rakhi-quick-add-home absolute bottom-4 left-0 right-0 flex items-center justify-center gap-3">
-                  <button
-                    onClick={(e) => handleAddToCart(product, e)}
-                    className="bg-white text-gray-900 px-5 py-2 rounded-full font-semibold text-xs tracking-wide hover:bg-gray-100 transition-colors shadow-lg flex items-center gap-1.5"
-                    style={{ fontFamily: "'Montserrat', sans-serif" }}
+              {/* Product info */}
+              <div className="p-4 sm:p-5 flex flex-col flex-1 justify-between">
+                <div>
+                  <p className="text-[10px] text-orange-600 uppercase tracking-widest mb-1 font-semibold" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+                    {product.category?.name || 'Gifting Hampers'}
+                  </p>
+                  <h3
+                    className={`font-semibold text-gray-900 line-clamp-2 leading-snug ${isHero ? 'text-lg sm:text-xl mb-2' : 'text-sm sm:text-base mb-1.5'}`}
+                    style={{ fontFamily: "'Playfair Display', serif" }}
                   >
-                    <ShoppingCart className="w-3.5 h-3.5" /> Add to Cart
-                  </button>
-                  <button
-                    onClick={(e) => handleAddToWishlist(product, e)}
-                    className="w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-colors"
-                  >
-                    <Heart className="w-4 h-4 text-gray-600 hover:text-red-500 transition-colors" />
-                  </button>
+                    {product.name}
+                  </h3>
+                  {itemCount && (
+                    <span className="rakhi-chip inline-block text-[10px] text-orange-700 font-medium px-2 py-0.5 rounded-full" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+                      {itemCount} items inside
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center justify-between gap-2 mt-3">
+                  <span className={`font-bold text-gray-900 ${isHero ? 'text-2xl' : 'text-lg'}`} style={{ fontFamily: "'Montserrat', sans-serif" }}>
+                    ₹{product.price}
+                  </span>
+                  {isHero && (
+                    <span className="text-[11px] text-gray-400" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+                      {product.fragnance}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
-
-            {/* Product info */}
-            <div className="p-5 sm:p-6">
-              <p className="text-xs text-orange-600 uppercase tracking-widest mb-1.5 font-semibold" style={{ fontFamily: "'Montserrat', sans-serif" }}>
-                {product.category?.name || 'Gifting Hampers'}
-              </p>
-              <h3
-                className="text-base sm:text-lg font-semibold text-gray-900 mb-3 line-clamp-2 leading-snug"
-                style={{ fontFamily: "'Playfair Display', serif" }}
-              >
-                {product.name}
-              </h3>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-xl sm:text-2xl font-bold text-gray-900" style={{ fontFamily: "'Montserrat', sans-serif" }}>
-                  ₹{product.price}
-                </span>
-                <span className="text-xs text-gray-400 line-clamp-1" style={{ fontFamily: "'Montserrat', sans-serif" }}>
-                  {product.fragnance}
-                </span>
-              </div>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* View all */}
@@ -565,7 +648,6 @@ const rakhiHampers = summerSaleProducts.filter(
     </div>
   </section>
 )}
-
       {/* ══════════════════════════════════════
           COLLECTIONS SECTION
       ══════════════════════════════════════ */}

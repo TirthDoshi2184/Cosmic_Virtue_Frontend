@@ -185,6 +185,10 @@ useEffect(() => {
 
   const displayProducts = activeTab === 'new' ? newArrivals : bestSellers;
 
+  const RAKHI_CATEGORY_ID = '698ed505fe809454d76aac2f';
+const rakhiHampers = summerSaleProducts.filter(
+  (p) => p.category?._id === RAKHI_CATEGORY_ID || p.name?.toLowerCase().includes('rakhi')
+);
   return (
     <>
       <style>{`
@@ -266,6 +270,39 @@ useEffect(() => {
 }
 .shimmer-badge {
   background: linear-gradient(90deg, #f59e0b, #ef4444, #f97316, #ef4444, #f59e0b);
+  background-size: 200% auto;
+  animation: shimmer 2.5s linear infinite;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Rakhi Special */
+@keyframes rakhiGlow {
+  0%, 100% { box-shadow: 0 0 25px rgba(217,119,6,0.35); }
+  50%       { box-shadow: 0 0 50px rgba(217,119,6,0.65), 0 0 80px rgba(220,38,38,0.2); }
+}
+@keyframes threadSway {
+  0%, 100% { transform: rotate(-4deg); }
+  50%       { transform: rotate(4deg); }
+}
+.rakhi-section { animation: rakhiGlow 2.5s ease-in-out infinite; }
+.rakhi-thread-icon { display: inline-block; animation: threadSway 2s ease-in-out infinite; transform-origin: top center; }
+.rakhi-card-home { transition: transform 0.35s ease, box-shadow 0.35s ease; }
+.rakhi-card-home:hover { transform: translateY(-8px); box-shadow: 0 20px 50px rgba(217,119,6,0.3); }
+.rakhi-card-home .r-img { transition: transform 0.6s ease; }
+.rakhi-card-home:hover .r-img { transform: scale(1.08); }
+.rakhi-quick-add-home {
+  opacity: 0;
+  transform: translateY(5px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.rakhi-card-home:hover .rakhi-quick-add-home {
+  opacity: 1;
+  transform: translateY(0);
+}
+.rakhi-shimmer-badge {
+  background: linear-gradient(90deg, #d97706, #dc2626, #f97316, #dc2626, #d97706);
   background-size: 200% auto;
   animation: shimmer 2.5s linear infinite;
   -webkit-background-clip: text;
@@ -418,6 +455,116 @@ useEffect(() => {
         `}</style>
       </div>
 
+{/* ══════════════════════════════════════
+    RAKHI SPECIAL HAMPERS SECTION
+══════════════════════════════════════ */}
+{!summerSaleLoading && rakhiHampers.length > 0 && (
+  <section className="rakhi-section py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-orange-50 via-amber-50 to-red-50">
+    <div className="max-w-7xl mx-auto">
+
+      {/* Header */}
+      <div className="text-center mb-12">
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <span className="h-px w-10 bg-gradient-to-r from-orange-400 to-red-400"></span>
+          <span className="rakhi-thread-icon text-2xl">🧵</span>
+          <span className="h-px w-10 bg-gradient-to-r from-red-400 to-orange-400"></span>
+        </div>
+        <h2
+          className="rakhi-shimmer-badge text-3xl sm:text-4xl lg:text-5xl font-bold mb-4"
+          style={{ fontFamily: "'Playfair Display', serif" }}
+        >
+          Rakhi Special Hampers
+        </h2>
+        <p
+          className="text-gray-600 text-sm sm:text-base max-w-xl mx-auto"
+          style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 300 }}
+        >
+          Celebrate the bond of Rakshabandhan with our curated hampers of candles, bath salts, wax melts &amp; chocolates
+        </p>
+      </div>
+
+      {/* Products grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+        {rakhiHampers.slice(0, 6).map((product) => (
+          <div
+            key={product._id}
+            className="rakhi-card-home group bg-white rounded-2xl overflow-hidden shadow-md cursor-pointer border border-orange-100"
+            onClick={() => navigate(`/product/${product._id}`)}
+          >
+            {/* Image */}
+            <div className="relative aspect-square overflow-hidden bg-gray-50">
+              <img
+                src={product.img?.[0] || 'https://images.unsplash.com/photo-1602874801006-64c78b297c86?w=600&h=600&fit=crop'}
+                alt={product.name}
+                className="r-img w-full h-full object-cover"
+                onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1602874801006-64c78b297c86?w=600&h=600&fit=crop'; }}
+              />
+
+              {/* Rakhi badge */}
+              <div className="absolute top-3 left-3">
+                <span className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-3 py-1 rounded-full text-xs font-bold tracking-wide shadow-md flex items-center gap-1">
+                  🪔 RAKHI SPECIAL
+                </span>
+              </div>
+
+              {/* Hover overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="rakhi-quick-add-home absolute bottom-4 left-0 right-0 flex items-center justify-center gap-3">
+                  <button
+                    onClick={(e) => handleAddToCart(product, e)}
+                    className="bg-white text-gray-900 px-5 py-2 rounded-full font-semibold text-xs tracking-wide hover:bg-gray-100 transition-colors shadow-lg flex items-center gap-1.5"
+                    style={{ fontFamily: "'Montserrat', sans-serif" }}
+                  >
+                    <ShoppingCart className="w-3.5 h-3.5" /> Add to Cart
+                  </button>
+                  <button
+                    onClick={(e) => handleAddToWishlist(product, e)}
+                    className="w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-colors"
+                  >
+                    <Heart className="w-4 h-4 text-gray-600 hover:text-red-500 transition-colors" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Product info */}
+            <div className="p-5 sm:p-6">
+              <p className="text-xs text-orange-600 uppercase tracking-widest mb-1.5 font-semibold" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+                {product.category?.name || 'Gifting Hampers'}
+              </p>
+              <h3
+                className="text-base sm:text-lg font-semibold text-gray-900 mb-3 line-clamp-2 leading-snug"
+                style={{ fontFamily: "'Playfair Display', serif" }}
+              >
+                {product.name}
+              </h3>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-xl sm:text-2xl font-bold text-gray-900" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+                  ₹{product.price}
+                </span>
+                <span className="text-xs text-gray-400 line-clamp-1" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+                  {product.fragnance}
+                </span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* View all */}
+      <div className="flex justify-center mt-12">
+        <button
+          onClick={() => navigate(`/products?category=Gifting Hampers`)}
+          className="group flex items-center gap-2 bg-gradient-to-r from-orange-500 to-red-600 text-white px-10 py-4 rounded-xl font-semibold text-sm tracking-wide uppercase hover:from-orange-600 hover:to-red-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-orange-200"
+          style={{ fontFamily: "'Montserrat', sans-serif" }}
+        >
+          Shop All Rakhi Hampers
+          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+        </button>
+      </div>
+    </div>
+  </section>
+)}
 
       {/* ══════════════════════════════════════
           COLLECTIONS SECTION
@@ -511,6 +658,8 @@ useEffect(() => {
           </div>
         </div>
       </section>
+
+      
 
       {/* ══════════════════════════════════════
           FEATURED PRODUCTS
